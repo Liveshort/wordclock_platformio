@@ -1,24 +1,22 @@
-#include <time.h>
 #include <esp_sntp.h>
+#include <time.h>
 
-#include "main.h"
-#include "log.h"
-#include "time_functions.h"
 #include "led_control.h"
+#include "log.h"
+#include "main.h"
+#include "time_functions.h"
 
 // Default timezone is Amsterdam
 // Other timezones can be found on https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 const char* default_timezone = "CET-1CEST,M3.5.0,M10.5.0/3";
 
-
-void time_synchronized_cb(struct timeval *tv) {
+void time_synchronized_cb(struct timeval* tv) {
     LOGGER.println("Tijd gesynchroniseerd met NTP server.");
-    TIMERS[TIME_SYNC] = millis()/1000;
+    TIMERS[TIME_SYNC] = millis() / 1000;
 }
 
-
 void initialize_sntp_time_servers() {
-    sntp_set_sync_interval(5*60*1000UL);
+    sntp_set_sync_interval(5 * 60 * 1000UL);
     sntp_set_time_sync_notification_cb(time_synchronized_cb);
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
     esp_sntp_setservername(0, "pool.ntp.org");
@@ -30,25 +28,26 @@ void initialize_sntp_time_servers() {
     tzset();
 }
 
-
 bool check_time_synchronization() {
-    if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED) return true;
-    
+    if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
+        return true;
+
     return false;
 }
 
-
 bool update_time() {
     // First check if time is initialized
-    if (!FLAGS[TIME_INITIALIZED]) FLAGS[TIME_INITIALIZED] = check_time_synchronization();
+    if (!FLAGS[TIME_INITIALIZED])
+        FLAGS[TIME_INITIALIZED] = check_time_synchronization();
     // Only update if at least 500 ms have passed since last update
-    if (!FLAGS[TIME_INITIALIZED] || millis() - TIMERS[TIME_UPDATE] < 500) return false;
+    if (!FLAGS[TIME_INITIALIZED] || millis() - TIMERS[TIME_UPDATE] < 500)
+        return false;
 
     TIMERS[TIME_UPDATE] = millis();
 
     struct tm timeinfo;
 
-    if(!getLocalTime(&timeinfo, 5)){
+    if (!getLocalTime(&timeinfo, 5)) {
         return false;
     }
 
@@ -57,17 +56,17 @@ bool update_time() {
     strftime(STRINGS[TIME_ZONE], 20, "%Z (%z)", &timeinfo);
 
     Serial.print("year:");
-    Serial.print(timeinfo.tm_year + 1900); // years since 1900
+    Serial.print(timeinfo.tm_year + 1900);  // years since 1900
     Serial.print("\tmonth:");
-    Serial.print(timeinfo.tm_mon + 1); // January = 0 (!)
+    Serial.print(timeinfo.tm_mon + 1);  // January = 0 (!)
     Serial.print("\tday:");
-    Serial.print(timeinfo.tm_mday); // day of month
+    Serial.print(timeinfo.tm_mday);  // day of month
     Serial.print("\thour:");
-    Serial.print(timeinfo.tm_hour); // hours since midnight  0-23
+    Serial.print(timeinfo.tm_hour);  // hours since midnight  0-23
     Serial.print("\tmin:");
-    Serial.print(timeinfo.tm_min); // minutes after the hour  0-59
+    Serial.print(timeinfo.tm_min);  // minutes after the hour  0-59
     Serial.print("\tsec:");
-    Serial.println(timeinfo.tm_sec); // seconds after the minute  0-61*
+    Serial.println(timeinfo.tm_sec);  // seconds after the minute  0-61*
 
     // ROUND_DOWN_TIME determines how to round the minutes to the nearest 5
     // If true, 12:29:59 -> 12:25 and 12:34:59 -> 12:30
@@ -76,20 +75,27 @@ bool update_time() {
     if (FLAGS[ROUND_DOWN_TIME]) {
         rounded_min = timeinfo.tm_min / 5 * 5;
     } else {
-        if (timeinfo.tm_sec >= 30) rounded_min = (timeinfo.tm_min + 3) / 5 * 5;
-        else rounded_min = (timeinfo.tm_min + 2) / 5 * 5;
+        if (timeinfo.tm_sec >= 30)
+            rounded_min = (timeinfo.tm_min + 3) / 5 * 5;
+        else
+            rounded_min = (timeinfo.tm_min + 2) / 5 * 5;
     }
     MINUTE_DOTS = timeinfo.tm_min % 5;
     rounded_hour = timeinfo.tm_hour;
     // For 20+ minutes, round up the hour (e.g. 12:20 -> tien voor half een)
-    if (rounded_min >= 20) rounded_hour = (timeinfo.tm_hour + 1) % 12;
-    else rounded_hour = timeinfo.tm_hour % 12;
+    if (rounded_min >= 20)
+        rounded_hour = (timeinfo.tm_hour + 1) % 12;
+    else
+        rounded_hour = timeinfo.tm_hour % 12;
     // "0 uur" should be represented as "12 uur"
-    if (rounded_hour == 0) rounded_hour = 12;
+    if (rounded_hour == 0)
+        rounded_hour = 12;
     // Handle the edge case of rounding 58 or 59 minutes up to the next hour
-    if (rounded_min == 60) rounded_min = 0;
-    
-    for (int i = 0; i < 7; ++i) TARGET_TIME_WORDS[i] = 255;
+    if (rounded_min == 60)
+        rounded_min = 0;
+
+    for (int i = 0; i < 7; ++i)
+        TARGET_TIME_WORDS[i] = 255;
 
     // HET IS VIJF VOOR HALF TWEE UUR
     // Set the words based on the rounded time
@@ -197,7 +203,8 @@ bool update_time() {
     }
 
     for (int i = 0; i < 7; ++i) {
-        if (TARGET_TIME_WORDS[i] == 255) continue;
+        if (TARGET_TIME_WORDS[i] == 255)
+            continue;
 
         Serial.print(WORD_STRINGS[TARGET_TIME_WORDS[i]]);
         Serial.print(" ");

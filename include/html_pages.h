@@ -10,8 +10,8 @@ const char index_html[] PROGMEM = R"rawliteral(
     <title>WoordKlok</title>
     <meta name="viewport" content="width=device-width">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -31,21 +31,21 @@ const char index_html[] PROGMEM = R"rawliteral(
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        input, button { 
-            margin: 10px; 
-            padding: 10px; 
-            font-size: 16px; 
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
         }
-        button { 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
             cursor: pointer;
             border-radius: 4px;
             min-width: 150px;
         }
-        button:hover { 
-            background-color: #005f73; 
+        button:hover {
+            background-color: #005f73;
         }
         .checkbox-group {
             margin: 15px;
@@ -86,19 +86,19 @@ const char index_html[] PROGMEM = R"rawliteral(
                 logTable.innerHTML = "";
                 data.timestamps.forEach((timestamp, i) => {
                     let row = logTable.insertRow(i);
-                    
+
                     let timestampCell = row.insertCell(0);
                     timestampCell.style.textAlign = "left";
                     timestampCell.style.padding = "10px";
                     timestampCell.style.fontWeight = "bold";
                     timestampCell.innerHTML = timestamp;
-                    
+
                     let contentCell = row.insertCell(1);
                     contentCell.style.textAlign = "left";
                     contentCell.style.padding = "10px";
                     contentCell.style.fontWeight = "bold";
                     contentCell.innerHTML = data.contents[i];
-                    
+
                     if (i % 2 === 0) {
                         row.style.backgroundColor = "#54718f";
                         timestampCell.style.color = "white";
@@ -111,7 +111,7 @@ const char index_html[] PROGMEM = R"rawliteral(
                 });
             });
         }
-        
+
         window.onload = function() {
             updateStatus();
             setInterval(updateStatus, 1000);
@@ -182,8 +182,8 @@ const char wifi_html[] PROGMEM = R"rawliteral(
     <title>WoordKlok - Netwerk</title>
     <meta name="viewport" content="width=device-width">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -203,25 +203,25 @@ const char wifi_html[] PROGMEM = R"rawliteral(
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        .form-container { 
-            display: flex; 
+        .form-container {
+            display: flex;
             justify-content: center;
             margin: 20px;
         }
-        .form-group { 
-            display: flex; 
-            align-items: center; 
+        .form-group {
+            display: flex;
+            align-items: center;
             margin: 10px;
             width: 100%;
             max-width: 400px;
         }
-        .form-group label { 
-            width: 120px; 
-            text-align: right; 
-            margin-right: 10px; 
+        .form-group label {
+            width: 120px;
+            text-align: right;
+            margin-right: 10px;
         }
-        .form-group select, 
-        .form-group input { 
+        .form-group select,
+        .form-group input {
             width: 300px;
             padding: 8px;
             border: 1px solid #ccc;
@@ -231,21 +231,21 @@ const char wifi_html[] PROGMEM = R"rawliteral(
             font-size: 16px;
             color: #000000;
         }
-        input, button { 
-            margin: 10px; 
-            padding: 10px; 
-            font-size: 16px; 
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
         }
-        button { 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
             cursor: pointer;
             border-radius: 4px;
             min-width: 150px;
         }
-        button:hover { 
-            background-color: #005f73; 
+        button:hover {
+            background-color: #005f73;
         }
     </style>
     <script>
@@ -337,8 +337,8 @@ const char log_html[] PROGMEM = R"rawliteral(
     <title>WoordKlok - Log</title>
     <meta name="viewport" content="width=device-width">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -358,21 +358,21 @@ const char log_html[] PROGMEM = R"rawliteral(
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        input, button { 
-            margin: 10px; 
-            padding: 10px; 
-            font-size: 16px; 
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
         }
-        button { 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
             cursor: pointer;
             border-radius: 4px;
             min-width: 150px;
         }
-        button:hover { 
-            background-color: #005f73; 
+        button:hover {
+            background-color: #005f73;
         }
     </style>
     <script>
@@ -382,19 +382,19 @@ const char log_html[] PROGMEM = R"rawliteral(
                 logTable.innerHTML = "";
                 data.timestamps.forEach((timestamp, i) => {
                     let row = logTable.insertRow(i);
-                    
+
                     let timestampCell = row.insertCell(0);
                     timestampCell.style.textAlign = "left";
                     timestampCell.style.padding = "10px";
                     timestampCell.style.fontWeight = "bold";
                     timestampCell.innerHTML = timestamp;
-                    
+
                     let contentCell = row.insertCell(1);
                     contentCell.style.textAlign = "left";
                     contentCell.style.padding = "10px";
                     contentCell.style.fontWeight = "bold";
                     contentCell.innerHTML = data.contents[i];
-                    
+
                     if (i % 2 === 0) {
                         row.style.backgroundColor = "#54718f";
                         timestampCell.style.color = "white";
@@ -407,7 +407,7 @@ const char log_html[] PROGMEM = R"rawliteral(
                 });
             });
         }
-        
+
         window.onload = function() {
             updateLogLong();
             setInterval(updateLogLong, 2000);

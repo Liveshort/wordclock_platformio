@@ -10,8 +10,9 @@ void Storage::initialize() {
 }
 
 bool Storage::check_saved_wifi_credentials() {
-    if (PREFS.isKey("wifi_ssid") && PREFS.isKey("wifi_password")) return true;
-    
+    if (PREFS.isKey("wifi_ssid") && PREFS.isKey("wifi_password"))
+        return true;
+
     return false;
 }
 
@@ -20,7 +21,7 @@ void Storage::save_wifi_credentials(String ssid, String password) {
     PREFS.putString("wifi_password", password);
 }
 
-void Storage::load_wifi_credentials(String &ssid, String &password) {
+void Storage::load_wifi_credentials(String& ssid, String& password) {
     ssid = PREFS.getString("wifi_ssid");
     password = PREFS.getString("wifi_password");
 }

@@ -2,7 +2,7 @@
 #define _NETWORKING_H_
 
 class WCNetworkManager {
-    private:
+   private:
     unsigned int wifi_connect_attempt_counter;
     unsigned int wifi_unable_to_connect_counter;
 
@@ -10,13 +10,13 @@ class WCNetworkManager {
     String wifi_ssid;
     String wifi_password;
     unsigned long wifi_last_connected;
-    
+
     bool http_login_enabled;
 
     String ssid_list[50];
     int ssid_count;
 
-    public:
+   public:
     WCNetworkManager();
     void setup_server();
     void turn_on_wifi();

@@ -1,16 +1,16 @@
-#include <stdint.h>
 #include <FastLED.h>
+#include <stdint.h>
 
-#include "main.h"
 #include "buttons.h"
-#include "networking.h"
-#include "time_functions.h"
-#include "persistent_storage.h"
-#include "log.h"
 #include "led_control.h"
+#include "log.h"
+#include "main.h"
+#include "networking.h"
+#include "persistent_storage.h"
+#include "time_functions.h"
 
 bool FLAGS[FLAG_COUNT];
-char * STRINGS[STRING_COUNT];
+char* STRINGS[STRING_COUNT];
 unsigned long TIMERS[TIMER_COUNT];
 volatile bool BUTTONS_PRESSED[BUTTON_COUNT];
 byte ANIMATION_STATES[ANIMATION_COUNT];
@@ -25,9 +25,11 @@ SUPER_STATE PREV_STATE, CURR_STATE, NEXT_STATE;
 NORMAL_OPERATION_SUBSTATE PREV_NO_SUBSTATE, CURR_NO_SUBSTATE, NEXT_NO_SUBSTATE;
 
 void initialize_globals_and_workers() {
-    for (int i = 0; i < FLAG_COUNT; ++i) FLAGS[i] = false;
+    for (int i = 0; i < FLAG_COUNT; ++i)
+        FLAGS[i] = false;
 
     // Initialize global strings
+
     STRINGS[CURRENT_TIME] = new char[10];
     STRINGS[TARGET_TIME] = new char[10];
     STRINGS[TIMESTAMP] = new char[20];
@@ -37,15 +39,20 @@ void initialize_globals_and_workers() {
     strncpy(STRINGS[TIMESTAMP], "------ --:--:--", 20);
     strncpy(STRINGS[TIME_ZONE], "-", 20);
 
-    for (int i = 0; i < TIMER_COUNT; ++i) TIMERS[i] = 0;
+    for (int i = 0; i < TIMER_COUNT; ++i)
+        TIMERS[i] = 0;
 
-    for (int i = 0; i < BUTTON_COUNT; ++i) BUTTONS_PRESSED[i] = false;
+    for (int i = 0; i < BUTTON_COUNT; ++i)
+        BUTTONS_PRESSED[i] = false;
 
-    for (int i = 0; i < ANIMATION_COUNT; ++i) ANIMATION_STATES[i] = 0;
+    for (int i = 0; i < ANIMATION_COUNT; ++i)
+        ANIMATION_STATES[i] = 0;
     ANIMATION_STATES[BLOCKING_FADE] = 255;
 
-    for (int i = 0; i < 6; ++i) CURRENT_TIME_WORDS[i] = 255;
-    for (int i = 0; i < 6; ++i) TARGET_TIME_WORDS[i] = 255;
+    for (int i = 0; i < 6; ++i)
+        CURRENT_TIME_WORDS[i] = 255;
+    for (int i = 0; i < 6; ++i)
+        TARGET_TIME_WORDS[i] = 255;
 
     LOGGER = Logger();
     STORAGE = Storage();
@@ -65,13 +72,16 @@ void initialize_globals_and_workers() {
 
 void setup() {
     Serial.begin(115200);
-    
+
     initialize_globals_and_workers();
-    
-    if (false && STORAGE.check_saved_wifi_credentials()) NETWORK_MANAGER.turn_on_wifi();
-    else NETWORK_MANAGER.turn_on_wifi_and_AP();
-    
-    // This has to be after turning on the wifi, otherwise it will bootloop due to opening a socket before wifi is active
+
+    if (false && STORAGE.check_saved_wifi_credentials())
+        NETWORK_MANAGER.turn_on_wifi();
+    else
+        NETWORK_MANAGER.turn_on_wifi_and_AP();
+
+    // This has to be after turning on the wifi, otherwise it will bootloop due to opening a socket before wifi is
+    // active
     initialize_sntp_time_servers();
 
     LED_CONTROLLER.initialize_led_controller();
@@ -90,7 +100,7 @@ void loop() {
         // Temporarily set current time to target time for testing
         set_current_time_to_target_time();
     }
-    
+
     // Check for button presses
     if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
         BUTTONS_PRESSED[BUTTON_DIMMER] = false;
@@ -115,7 +125,7 @@ void loop() {
 
     // Try to keep the LED updates at ~60 FPS
     EVERY_N_MILLISECONDS(17) {
-        switch(CURR_STATE) {
+        switch (CURR_STATE) {
             case INITIALIZING:
                 NEXT_STATE = WAITING_FOR_WIFI;
                 FLAGS[TRIGGER_STATE_CHANGE] = true;
@@ -169,7 +179,7 @@ void loop() {
                     set_current_time_to_target_time();
                     FLAGS[UPDATING_TIME_STRING] = false;
                 }
-            
+
                 // LED_CONTROLLER.blink();
                 LED_CONTROLLER.show_time();
                 break;
