@@ -89,6 +89,28 @@ void loop() {
         // Temporarily set current time to target time for testing
         set_current_time_to_target_time();
     }
+    
+    // Check for button presses
+    if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
+        BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+        LOGGER.println("DIMMER button pressed!");
+    }
+    if (BUTTONS_PRESSED[BUTTON_TIMER]) {
+        BUTTONS_PRESSED[BUTTON_TIMER] = false;
+        LOGGER.println("TIMER button pressed!");
+    }
+    if (BUTTONS_PRESSED[BUTTON_WIFI]) {
+        BUTTONS_PRESSED[BUTTON_WIFI] = false;
+        LOGGER.println("WIFI button pressed!");
+    }
+    if (BUTTONS_PRESSED[BUTTON_THEMA]) {
+        BUTTONS_PRESSED[BUTTON_THEMA] = false;
+        LOGGER.println("THEMA button pressed!");
+    }
+    if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
+        BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        LOGGER.println("GEZEGDE button pressed!");
+    }
 
     // Try to keep the LED updates at ~60 FPS
     EVERY_N_MILLISECONDS(17) {
