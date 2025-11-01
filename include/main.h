@@ -51,8 +51,11 @@ enum TIMERS {
 extern unsigned long TIMERS[];
 
 enum BUTTONS {
-    BUTTON_22,
-    BUTTON_23,
+    BUTTON_DIMMER,      // GPIO 18
+    BUTTON_TIMER,       // GPIO 19
+    BUTTON_WIFI,        // GPIO 21
+    BUTTON_THEMA,       // GPIO 22
+    BUTTON_GEZEGDE,     // GPIO 23
     BUTTON_COUNT
 };
 extern volatile bool BUTTONS_PRESSED[];
