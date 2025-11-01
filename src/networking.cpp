@@ -446,9 +446,23 @@ void WCNetworkManager::scan_wifi() {
 
     TIMERS[WIFI_SCAN] = millis();
     LOGGER.println("Netwerkscan starten...");
+    
+    // Save current state so we can restore it after the scan
+    bool was_connecting = FLAGS[WIFI_CONNECTING];
+    bool was_connected = (WiFi.status() == WL_CONNECTED);
+    String saved_ssid = wifi_ssid;
+    String saved_password = wifi_password;
+    
+    // Always disconnect before scanning - scan has priority
+    LOGGER.println("WiFi disconnecten voor netwerkscan...");
+    FLAGS[WIFI_CONNECTING] = false;
+    esp_wifi_disconnect();
+    delay(200);
   
-    // WiFi.scanNetworks will return the number of networks found.
+    // Perform the scan
     int n = WiFi.scanNetworks();
+    
+    // Handle scan results
     if (n == -2) {
         LOGGER.println("--- Netwerkscan mislukt (foutcode -2 WIFI_SCAN_FAILED).");
         ssid_list[0] = "Netwerkscan mislukt...";
@@ -457,7 +471,7 @@ void WCNetworkManager::scan_wifi() {
         LOGGER.println("--- Geen netwerken gevonden.");
         ssid_list[0] = "Geen netwerken gevonden...";
         ssid_count = 1;
-    } else {
+    } else if (n > 0) {
         LOGGER.print("--- ");
         LOGGER.print(String(n));
         LOGGER.println(" netwerken gevonden.");
@@ -468,11 +482,17 @@ void WCNetworkManager::scan_wifi() {
             ssid_list[i] = WiFi.SSID(i).c_str();
         }
         ssid_count = n;
-
-        // for (int i = 0; i < n; ++i) {
-        //     LOGGER.println(ssid_list[i]);
-        // }
-        // LOGGER.println("");
+    }
+    
+    // Restore connection if we were connected or connecting before
+    if ((was_connecting || was_connected) && !saved_ssid.isEmpty()) {
+        LOGGER.println("Hervatten verbinding met " + saved_ssid + "...");
+        wifi_ssid = saved_ssid;
+        wifi_password = saved_password;
+        FLAGS[WIFI_CONNECTING] = true;
+        WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
+        wifi_connect_attempt_counter = 0;
+        TIMERS[WIFI_CONNECT_ATTEMPT] = millis();
     }
   
 //    LOGGER.println("Nr | SSID                             | RSSI | CH | Encryption");
