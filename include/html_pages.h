@@ -10,8 +10,8 @@ const char index_html[] PROGMEM = R"rawliteral(
     <title>WoordKlok</title>
     <meta name="viewport" content="width=device-width">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -31,21 +31,21 @@ const char index_html[] PROGMEM = R"rawliteral(
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        input, button { 
-            margin: 10px; 
-            padding: 10px; 
-            font-size: 16px; 
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
         }
-        button { 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
             cursor: pointer;
             border-radius: 4px;
             min-width: 150px;
         }
-        button:hover { 
-            background-color: #005f73; 
+        button:hover {
+            background-color: #005f73;
         }
         .checkbox-group {
             margin: 15px;
@@ -86,19 +86,19 @@ const char index_html[] PROGMEM = R"rawliteral(
                 logTable.innerHTML = "";
                 data.timestamps.forEach((timestamp, i) => {
                     let row = logTable.insertRow(i);
-                    
+
                     let timestampCell = row.insertCell(0);
                     timestampCell.style.textAlign = "left";
                     timestampCell.style.padding = "10px";
                     timestampCell.style.fontWeight = "bold";
                     timestampCell.innerHTML = timestamp;
-                    
+
                     let contentCell = row.insertCell(1);
                     contentCell.style.textAlign = "left";
                     contentCell.style.padding = "10px";
                     contentCell.style.fontWeight = "bold";
                     contentCell.innerHTML = data.contents[i];
-                    
+
                     if (i % 2 === 0) {
                         row.style.backgroundColor = "#54718f";
                         timestampCell.style.color = "white";
@@ -111,7 +111,7 @@ const char index_html[] PROGMEM = R"rawliteral(
                 });
             });
         }
-        
+
         window.onload = function() {
             updateStatus();
             setInterval(updateStatus, 1000);
@@ -183,8 +183,8 @@ const char wifi_html[] PROGMEM = R"rawliteral(
     <title>WoordKlok - Netwerk</title>
     <meta name="viewport" content="width=device-width">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -204,25 +204,25 @@ const char wifi_html[] PROGMEM = R"rawliteral(
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        .form-container { 
-            display: flex; 
+        .form-container {
+            display: flex;
             justify-content: center;
             margin: 20px;
         }
-        .form-group { 
-            display: flex; 
-            align-items: center; 
+        .form-group {
+            display: flex;
+            align-items: center;
             margin: 10px;
             width: 100%;
             max-width: 400px;
         }
-        .form-group label { 
-            width: 120px; 
-            text-align: right; 
-            margin-right: 10px; 
+        .form-group label {
+            width: 120px;
+            text-align: right;
+            margin-right: 10px;
         }
-        .form-group select, 
-        .form-group input { 
+        .form-group select,
+        .form-group input {
             width: 300px;
             padding: 8px;
             border: 1px solid #ccc;
@@ -232,21 +232,21 @@ const char wifi_html[] PROGMEM = R"rawliteral(
             font-size: 16px;
             color: #000000;
         }
-        input, button { 
-            margin: 10px; 
-            padding: 10px; 
-            font-size: 16px; 
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
         }
-        button { 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
             cursor: pointer;
             border-radius: 4px;
             min-width: 150px;
         }
-        button:hover { 
-            background-color: #005f73; 
+        button:hover {
+            background-color: #005f73;
         }
     </style>
     <script>
@@ -338,8 +338,8 @@ const char log_html[] PROGMEM = R"rawliteral(
     <title>WoordKlok - Log</title>
     <meta name="viewport" content="width=device-width">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
+        body {
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -359,21 +359,21 @@ const char log_html[] PROGMEM = R"rawliteral(
             margin-top: 10px;
             margin-bottom: 10px;
         }
-        input, button { 
-            margin: 10px; 
-            padding: 10px; 
-            font-size: 16px; 
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
         }
-        button { 
-            background-color: #008CBA; 
-            color: white; 
-            border: none; 
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
             cursor: pointer;
             border-radius: 4px;
             min-width: 150px;
         }
-        button:hover { 
-            background-color: #005f73; 
+        button:hover {
+            background-color: #005f73;
         }
     </style>
     <script>
@@ -383,19 +383,19 @@ const char log_html[] PROGMEM = R"rawliteral(
                 logTable.innerHTML = "";
                 data.timestamps.forEach((timestamp, i) => {
                     let row = logTable.insertRow(i);
-                    
+
                     let timestampCell = row.insertCell(0);
                     timestampCell.style.textAlign = "left";
                     timestampCell.style.padding = "10px";
                     timestampCell.style.fontWeight = "bold";
                     timestampCell.innerHTML = timestamp;
-                    
+
                     let contentCell = row.insertCell(1);
                     contentCell.style.textAlign = "left";
                     contentCell.style.padding = "10px";
                     contentCell.style.fontWeight = "bold";
                     contentCell.innerHTML = data.contents[i];
-                    
+
                     if (i % 2 === 0) {
                         row.style.backgroundColor = "#54718f";
                         timestampCell.style.color = "white";
@@ -408,7 +408,7 @@ const char log_html[] PROGMEM = R"rawliteral(
                 });
             });
         }
-        
+
         window.onload = function() {
             updateLogLong();
             setInterval(updateLogLong, 2000);
@@ -546,13 +546,13 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
         <button onclick="clearAll()" class="danger">Wis Alles</button>
         <button onclick="window.location.href='/'">Terug</button>
     </div>
-    
+
     <script>
         const GRID_SIZE = 13;
         const TOTAL_LEDS = 174;
         let ledStates = new Array(TOTAL_LEDS).fill(0);
         let ledColors = new Array(TOTAL_LEDS).fill('#ffffff');
-        
+
         // Letter mapping for the word clock (LED index to letter)
         const LED_LETTERS = [
             'H','E','T','D','I','E','R','E','N','E','E','M','C',
@@ -570,7 +570,7 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
             'V','I','J','F','Z','E','S','X','U','U','R','K','!',
             '.','.','.','.','.'
         ];
-        
+
         // Create the grid with letters
         function createGrid() {
             const grid = document.getElementById('led-grid');
@@ -583,7 +583,7 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
                 grid.appendChild(cell);
             }
         }
-        
+
         // Toggle LED state
         function toggleLED(index) {
             if (ledStates[index] === 1) {
@@ -597,7 +597,7 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
             updateCellDisplay(index);
             sendLEDUpdate(index, ledStates[index], ledColors[index]);
         }
-        
+
         // Update cell visual state
         function updateCellDisplay(index) {
             const cell = document.querySelector(`[data-index="${index}"]`);
@@ -611,21 +611,21 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
                 cell.style.boxShadow = '';
             }
         }
-        
+
         // Send LED update to ESP32
         function sendLEDUpdate(led, state, color) {
             // Convert hex color to RGB
             const r = parseInt(color.substr(1,2), 16);
             const g = parseInt(color.substr(3,2), 16);
             const b = parseInt(color.substr(5,2), 16);
-            
+
             fetch('/set_led', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: `led=${led}&state=${state}&r=${r}&g=${g}&b=${b}`
             }).catch(err => console.error('Error:', err));
         }
-        
+
         // Clear all LEDs
         function clearAll() {
             if (confirm('Weet je zeker dat je alles wilt wissen?')) {
@@ -639,7 +639,7 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
                     .catch(err => console.error('Error:', err));
             }
         }
-        
+
         // Load current LED states
         function loadLEDStates() {
             fetch('/get_leds')
@@ -652,11 +652,11 @@ const char drawing_board_html[] PROGMEM = R"rawliteral(
                 })
                 .catch(err => console.error('Error loading LEDs:', err));
         }
-        
+
         // Initialize
         createGrid();
         loadLEDStates();
-        
+
         // Handle page unload - return to normal operation
         window.addEventListener('beforeunload', function() {
             fetch('/exit_drawing_board', {method: 'POST', keepalive: true});

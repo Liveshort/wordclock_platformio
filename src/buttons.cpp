@@ -1,9 +1,9 @@
 #include <Arduino.h>
 
-#include "main.h"
 #include "buttons.h"
+#include "main.h"
 
-#define DEBOUNCE_DELAY 200 // milliseconds
+#define DEBOUNCE_DELAY 200  // milliseconds
 
 void IRAM_ATTR button_dimmer_isr() {
     unsigned long interrupt_time = millis();
@@ -51,7 +51,7 @@ void initialize_buttons() {
     pinMode(21, INPUT_PULLUP);  // WIFI
     pinMode(22, INPUT_PULLUP);  // THEMA
     pinMode(23, INPUT_PULLUP);  // GEZEGDE
-    
+
     attachInterrupt(digitalPinToInterrupt(18), button_dimmer_isr, FALLING);
     attachInterrupt(digitalPinToInterrupt(19), button_timer_isr, FALLING);
     attachInterrupt(digitalPinToInterrupt(21), button_wifi_isr, FALLING);

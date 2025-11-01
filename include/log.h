@@ -4,13 +4,13 @@
 #define LOG_MAX_LENGTH 20
 
 class Logger {
-    private:
+   private:
     String _serial_history[LOG_MAX_LENGTH + 1];
     String _serial_history_timestamps[LOG_MAX_LENGTH + 1];
     int _serial_history_idx;
     int _serial_history_length;
 
-    public:
+   public:
     Logger();
     void print(const String str);
     void println(const String str);
