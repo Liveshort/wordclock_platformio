@@ -52,7 +52,7 @@ bool update_time() {
         return false;
     }
 
-    strftime(STRINGS[TIME], 10, "%H:%M:%S", &timeinfo);
+    strftime(STRINGS[TARGET_TIME], 10, "%H:%M:%S", &timeinfo);
     strftime(STRINGS[TIMESTAMP], 20, "%d-%b %H:%M:%S", &timeinfo);
     strftime(STRINGS[TIME_ZONE], 20, "%Z (%z)", &timeinfo);
 
@@ -88,64 +88,64 @@ bool update_time() {
     // Handle the edge case of rounding 58 or 59 minutes up to the next hour
     if (rounded_min == 60) rounded_min = 0;
     
-    for (int i = 0; i < 7; ++i) CURRENT_TIME_WORDS[i] = 255;
+    for (int i = 0; i < 7; ++i) TARGET_TIME_WORDS[i] = 255;
 
     // HET IS VIJF VOOR HALF TWEE UUR
     // Set the words based on the rounded time
     switch (rounded_min) {
         case 0:
-            CURRENT_TIME_WORDS[0] = HET;
-            CURRENT_TIME_WORDS[1] = IS;
-            CURRENT_TIME_WORDS[6] = UUR;
+            TARGET_TIME_WORDS[0] = HET;
+            TARGET_TIME_WORDS[1] = IS;
+            TARGET_TIME_WORDS[6] = UUR;
             break;
         case 5:
-            CURRENT_TIME_WORDS[2] = VIJF;
-            CURRENT_TIME_WORDS[3] = OVER;
+            TARGET_TIME_WORDS[2] = VIJF;
+            TARGET_TIME_WORDS[3] = OVER;
             break;
         case 10:
-            CURRENT_TIME_WORDS[2] = TIEN;
-            CURRENT_TIME_WORDS[3] = OVER;
+            TARGET_TIME_WORDS[2] = TIEN;
+            TARGET_TIME_WORDS[3] = OVER;
             break;
         case 15:
-            CURRENT_TIME_WORDS[2] = KWART;
-            CURRENT_TIME_WORDS[3] = OVER;
+            TARGET_TIME_WORDS[2] = KWART;
+            TARGET_TIME_WORDS[3] = OVER;
             break;
         case 20:
-            CURRENT_TIME_WORDS[2] = TIEN;
-            CURRENT_TIME_WORDS[3] = VOOR;
-            CURRENT_TIME_WORDS[4] = HALF;
+            TARGET_TIME_WORDS[2] = TIEN;
+            TARGET_TIME_WORDS[3] = VOOR;
+            TARGET_TIME_WORDS[4] = HALF;
             break;
         case 25:
-            CURRENT_TIME_WORDS[2] = VIJF;
-            CURRENT_TIME_WORDS[3] = VOOR;
-            CURRENT_TIME_WORDS[4] = HALF;
+            TARGET_TIME_WORDS[2] = VIJF;
+            TARGET_TIME_WORDS[3] = VOOR;
+            TARGET_TIME_WORDS[4] = HALF;
             break;
         case 30:
-            CURRENT_TIME_WORDS[0] = HET;
-            CURRENT_TIME_WORDS[1] = IS;
-            CURRENT_TIME_WORDS[4] = HALF;
+            TARGET_TIME_WORDS[0] = HET;
+            TARGET_TIME_WORDS[1] = IS;
+            TARGET_TIME_WORDS[4] = HALF;
             break;
         case 35:
-            CURRENT_TIME_WORDS[2] = VIJF;
-            CURRENT_TIME_WORDS[3] = OVER;
-            CURRENT_TIME_WORDS[4] = HALF;
+            TARGET_TIME_WORDS[2] = VIJF;
+            TARGET_TIME_WORDS[3] = OVER;
+            TARGET_TIME_WORDS[4] = HALF;
             break;
         case 40:
-            CURRENT_TIME_WORDS[2] = TIEN;
-            CURRENT_TIME_WORDS[3] = OVER;
-            CURRENT_TIME_WORDS[4] = HALF;
+            TARGET_TIME_WORDS[2] = TIEN;
+            TARGET_TIME_WORDS[3] = OVER;
+            TARGET_TIME_WORDS[4] = HALF;
             break;
         case 45:
-            CURRENT_TIME_WORDS[2] = KWART;
-            CURRENT_TIME_WORDS[3] = VOOR;
+            TARGET_TIME_WORDS[2] = KWART;
+            TARGET_TIME_WORDS[3] = VOOR;
             break;
         case 50:
-            CURRENT_TIME_WORDS[2] = TIEN;
-            CURRENT_TIME_WORDS[3] = VOOR;
+            TARGET_TIME_WORDS[2] = TIEN;
+            TARGET_TIME_WORDS[3] = VOOR;
             break;
         case 55:
-            CURRENT_TIME_WORDS[2] = VIJF;
-            CURRENT_TIME_WORDS[3] = VOOR;
+            TARGET_TIME_WORDS[2] = VIJF;
+            TARGET_TIME_WORDS[3] = VOOR;
             break;
         default:
             LOGGER.println("Onverwachte minuutwaarde bij tijd afronden: " + String(rounded_min));
@@ -155,40 +155,40 @@ bool update_time() {
     // Set the hour word
     switch (rounded_hour) {
         case 1:
-            CURRENT_TIME_WORDS[5] = EEN2;
+            TARGET_TIME_WORDS[5] = EEN2;
             break;
         case 2:
-            CURRENT_TIME_WORDS[5] = TWEE;
+            TARGET_TIME_WORDS[5] = TWEE;
             break;
         case 3:
-            CURRENT_TIME_WORDS[5] = DRIE;
+            TARGET_TIME_WORDS[5] = DRIE;
             break;
         case 4:
-            CURRENT_TIME_WORDS[5] = VIER;
+            TARGET_TIME_WORDS[5] = VIER;
             break;
         case 5:
-            CURRENT_TIME_WORDS[5] = VIJF2;
+            TARGET_TIME_WORDS[5] = VIJF2;
             break;
         case 6:
-            CURRENT_TIME_WORDS[5] = ZES;
+            TARGET_TIME_WORDS[5] = ZES;
             break;
         case 7:
-            CURRENT_TIME_WORDS[5] = ZEVEN;
+            TARGET_TIME_WORDS[5] = ZEVEN;
             break;
         case 8:
-            CURRENT_TIME_WORDS[5] = ACHT;
+            TARGET_TIME_WORDS[5] = ACHT;
             break;
         case 9:
-            CURRENT_TIME_WORDS[5] = NEGEN;
+            TARGET_TIME_WORDS[5] = NEGEN;
             break;
         case 10:
-            CURRENT_TIME_WORDS[5] = TIEN2;
+            TARGET_TIME_WORDS[5] = TIEN2;
             break;
         case 11:
-            CURRENT_TIME_WORDS[5] = ELF;
+            TARGET_TIME_WORDS[5] = ELF;
             break;
         case 12:
-            CURRENT_TIME_WORDS[5] = TWAALF;
+            TARGET_TIME_WORDS[5] = TWAALF;
             break;
         default:
             LOGGER.println("Onverwachte uurwaarde bij tijd afronden: " + String(rounded_hour));
@@ -196,12 +196,19 @@ bool update_time() {
     }
 
     for (int i = 0; i < 7; ++i) {
-        if (CURRENT_TIME_WORDS[i] == 255) continue;
+        if (TARGET_TIME_WORDS[i] == 255) continue;
 
-        Serial.print(WORD_STRINGS[CURRENT_TIME_WORDS[i]]);
+        Serial.print(WORD_STRINGS[TARGET_TIME_WORDS[i]]);
         Serial.print(" ");
     }
     Serial.println();
 
     return true;
+}
+
+void set_current_time_to_target_time() {
+    strncpy(STRINGS[CURRENT_TIME], STRINGS[TARGET_TIME], 10);
+    for (int i = 0; i < 7; ++i) {
+        CURRENT_TIME_WORDS[i] = TARGET_TIME_WORDS[i];
+    }
 }

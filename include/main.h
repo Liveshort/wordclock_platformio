@@ -6,23 +6,31 @@
 #include "log.h"
 #include "persistent_storage.h"
 #include "networking.h"
+#include "led_control.h"
 
 void setup();
 void loop();
 
 enum FLAGS {
-    TIME_INITIALIZED,   // True if time has been synchronized at least once
-    WIFI_ACTIVE,        // True if WiFi is enabled
-    AP_ACTIVE,          // True if Access Point is enabled
-    WIFI_CONNECTING,    // True if currently trying to connect to WiFi
-    WIFI_CONNECTED_F,   // True if WiFi is connected
-    ROUND_DOWN_TIME,    // Setting this to false will make 12:27:30 -> 12:30 and 12:32:29 -> 12:30. true will make it 12:29:59 -> 12:25.
+    TIME_INITIALIZED,       // True if time has been synchronized at least once
+    WIFI_ACTIVE,            // True if WiFi is enabled
+    AP_ACTIVE,              // True if Access Point is enabled
+    WIFI_CONNECTING,        // True if currently trying to connect to WiFi
+    WIFI_CONNECTED_F,       // True if WiFi is connected
+    ROUND_DOWN_TIME,        // Setting this to false will make 12:27:30 -> 12:30 and 12:32:29 -> 12:30. true will make it 12:29:59 -> 12:25.
+    TRANSITIONING,          // True if currently in a transition between states. This disables state changes.
+    TRIGGER_STATE_CHANGE,   // Set to true to trigger a state change in the next loop iteration
+    FADING_IN,              // True if currently fading in (blocking)
+    FADING_OUT,             // True if currently fading out (blocking)
+    CROSSFADING,            // True if currently crossfading between two animations
+    UPDATING_TIME_STRING,   // True if currently updating the time string
     FLAG_COUNT
 };
 extern bool FLAGS[];
 
 enum STRINGS {
-    TIME,               // Current time as string HH:MM:SS
+    CURRENT_TIME,       // Current time as string HH:MM:SS
+    TARGET_TIME,       // Target time as string HH:MM:SS
     TIMESTAMP,          // Current timestamp as string DD-MMM HH:MM:SS
     TIME_ZONE,          // Current time zone as string (e.g. CEST (+0200))
     STRING_COUNT
@@ -52,7 +60,9 @@ extern volatile bool BUTTONS_PRESSED[];
 enum SUPER_STATE {
     INITIALIZING,
     WAITING_FOR_WIFI,
+    WIFI_CONNECTED_S,
     WAITING_FOR_TIME_SYNC,
+    TIME_SYNCED_S,
     NORMAL_OPERATION,
     FORCED_SAYING,
     TIMER_SET,
@@ -73,10 +83,28 @@ extern NORMAL_OPERATION_SUBSTATE PREV_NO_SUBSTATE;
 extern NORMAL_OPERATION_SUBSTATE CURR_NO_SUBSTATE;
 extern NORMAL_OPERATION_SUBSTATE NEXT_NO_SUBSTATE;
 
+enum ANIMATIONS {
+    BLOCKING_FADE,
+    WIFI_BREATHING,
+    WIFI_CONNECTED_BLINK,
+    TIME_SYNC_BREATHING,
+    TIME_SYNCED_BLINK,
+    OVERLAY_AP_ACTIVE,
+    OVERLAY_BUTTON_PRESS_1,
+    OVERLAY_BUTTON_PRESS_2,
+    OVERLAY_BUTTON_PRESS_3,
+    OVERLAY_BUTTON_PRESS_4,
+    OVERLAY_BUTTON_PRESS_5,
+    ANIMATION_COUNT
+};
+extern byte ANIMATION_STATES[];
+
 extern byte CURRENT_TIME_WORDS[];
+extern byte TARGET_TIME_WORDS[];
 
 extern Logger LOGGER;
 extern Storage STORAGE;
 extern WCNetworkManager NETWORK_MANAGER;
+extern LEDController LED_CONTROLLER;
 
 #endif

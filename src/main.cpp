@@ -1,5 +1,5 @@
-#include <FastLED.h>
 #include <stdint.h>
+#include <FastLED.h>
 
 #include "main.h"
 #include "buttons.h"
@@ -7,34 +7,32 @@
 #include "time_functions.h"
 #include "persistent_storage.h"
 #include "log.h"
-
-#define LED_PIN     14
-#define NUM_LEDS    4
-#define BRIGHTNESS  255
-#define LED_TYPE    WS2812
-#define COLOR_ORDER GRB
+#include "led_control.h"
 
 bool FLAGS[FLAG_COUNT];
 char * STRINGS[STRING_COUNT];
 unsigned long TIMERS[TIMER_COUNT];
 volatile bool BUTTONS_PRESSED[BUTTON_COUNT];
+byte ANIMATION_STATES[ANIMATION_COUNT];
 byte CURRENT_TIME_WORDS[7];
+byte TARGET_TIME_WORDS[7];
 Logger LOGGER;
 Storage STORAGE;
 WCNetworkManager NETWORK_MANAGER;
+LEDController LED_CONTROLLER;
 SUPER_STATE PREV_STATE, CURR_STATE, NEXT_STATE;
 NORMAL_OPERATION_SUBSTATE PREV_NO_SUBSTATE, CURR_NO_SUBSTATE, NEXT_NO_SUBSTATE;
-
-CRGB leds[NUM_LEDS];
 
 void initialize_globals_and_workers() {
     for (int i = 0; i < FLAG_COUNT; ++i) FLAGS[i] = false;
 
     // Initialize global strings
-    STRINGS[TIME] = new char[10];
+    STRINGS[CURRENT_TIME] = new char[10];
+    STRINGS[TARGET_TIME] = new char[10];
     STRINGS[TIMESTAMP] = new char[20];
     STRINGS[TIME_ZONE] = new char[20];
-    strncpy(STRINGS[TIME], "--:--:--", 10);
+    strncpy(STRINGS[CURRENT_TIME], "--:--:--", 10);
+    strncpy(STRINGS[TARGET_TIME], "--:--:--", 10);
     strncpy(STRINGS[TIMESTAMP], "------ --:--:--", 20);
     strncpy(STRINGS[TIME_ZONE], "-", 20);
 
@@ -42,12 +40,17 @@ void initialize_globals_and_workers() {
 
     for (int i = 0; i < BUTTON_COUNT; ++i) BUTTONS_PRESSED[i] = false;
 
+    for (int i = 0; i < ANIMATION_COUNT; ++i) ANIMATION_STATES[i] = 0;
+    ANIMATION_STATES[BLOCKING_FADE] = 255;
+
     for (int i = 0; i < 6; ++i) CURRENT_TIME_WORDS[i] = 255;
+    for (int i = 0; i < 6; ++i) TARGET_TIME_WORDS[i] = 255;
 
     LOGGER = Logger();
     STORAGE = Storage();
     STORAGE.initialize();
     NETWORK_MANAGER = WCNetworkManager();
+    LED_CONTROLLER = LEDController();
 
     PREV_STATE = INITIALIZING;
     CURR_STATE = INITIALIZING;
@@ -70,68 +73,104 @@ void setup() {
     // This has to be after turning on the wifi, otherwise it will bootloop due to opening a socket before wifi is active
     initialize_sntp_time_servers();
 
-    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-    FastLED.setBrightness(BRIGHTNESS);
+    LED_CONTROLLER.initialize_led_controller();
 }
 
 void loop() {
-    static bool state = false;
-    if (state) {
-        leds[0] = CRGB::Gray10;
-        if (FLAGS[TIME_INITIALIZED]) leds[1] = CRGB::Green;
-        if (FLAGS[WIFI_ACTIVE]) leds[2] = CRGB::Blue;
-        if (FLAGS[AP_ACTIVE]) leds[3] = CRGB::Red;
-        state = false;
-    } else {
-        leds[0] = CRGB::Black;
-        if (!FLAGS[TIME_INITIALIZED]) leds[1] = CRGB::Black;
-        if (!FLAGS[WIFI_ACTIVE]) leds[2] = CRGB::Black;
-        if (!FLAGS[AP_ACTIVE]) leds[3] = CRGB::Black;
-        state = true;
-    }
-    FastLED.show();
-
-    // if (BUTTONS_PRESSED[BUTTON_22]) {
-    //     Serial.println("Button 22 pressed!");
-    //     BUTTONS_PRESSED[BUTTON_22] = false;
-    // }
-
-    // if (BUTTONS_PRESSED[BUTTON_23]) {
-    //     Serial.println("Button 23 pressed!");
-    //     BUTTONS_PRESSED[BUTTON_23] = false;
-    // }
-
     // int light_transistor_value = analogRead(4);
     // int ldr_value = analogRead(2);
 
     // Serial.println("Transistor: " + String(light_transistor_value) + "| LDR: " + String(ldr_value));
 
-    NETWORK_MANAGER.update();
-    update_time();
+    EVERY_N_MILLISECONDS(500) {
+        NETWORK_MANAGER.update();
+        update_time();
 
-    switch(CURR_STATE) {
-        case INITIALIZING:
-            NEXT_STATE = WAITING_FOR_WIFI;
-            break;
-        case WAITING_FOR_WIFI:
-            if (FLAGS[WIFI_CONNECTED_F]) {
-                NEXT_STATE = WAITING_FOR_TIME_SYNC;
-            } else if (!FLAGS[WIFI_ACTIVE] && !FLAGS[WIFI_CONNECTING]) {
-                // Apparently connecting to wifi did not work, so color the wifi indicator LED red and do nothing
-                int TODO = 0;
-            }
-            break;
-        case WAITING_FOR_TIME_SYNC:
-            if (FLAGS[TIME_INITIALIZED]) {
-                NEXT_STATE = NORMAL_OPERATION;
-            }
-            break;
-        case NORMAL_OPERATION:
-            // Normal operation code here
-            break;
-        default:
-            break;
+        // Temporarily set current time to target time for testing
+        set_current_time_to_target_time();
     }
 
-    delay(500);
+    // Try to keep the LED updates at ~60 FPS
+    EVERY_N_MILLISECONDS(17) {
+        switch(CURR_STATE) {
+            case INITIALIZING:
+                NEXT_STATE = WAITING_FOR_WIFI;
+                FLAGS[TRIGGER_STATE_CHANGE] = true;
+                break;
+            case WAITING_FOR_WIFI:
+                if (FLAGS[WIFI_CONNECTED_F]) {
+                    NEXT_STATE = WIFI_CONNECTED_S;
+                    FLAGS[TRIGGER_STATE_CHANGE] = true;
+                    FLAGS[TRANSITIONING] = true;
+                } else if (!FLAGS[WIFI_ACTIVE] && !FLAGS[WIFI_CONNECTING]) {
+                    LED_CONTROLLER.waiting_for_wifi_failed();
+                }
+
+                LED_CONTROLLER.waiting_for_wifi_breathing_animation();
+                break;
+            case WIFI_CONNECTED_S:
+                if (!FLAGS[TRANSITIONING]) {
+                    NEXT_STATE = WAITING_FOR_TIME_SYNC;
+                    FLAGS[TRIGGER_STATE_CHANGE] = true;
+                }
+
+                LED_CONTROLLER.wifi_connected_blink();
+                break;
+            case WAITING_FOR_TIME_SYNC:
+                if (FLAGS[TIME_INITIALIZED]) {
+                    NEXT_STATE = TIME_SYNCED_S;
+                    FLAGS[TRIGGER_STATE_CHANGE] = true;
+                    FLAGS[TRANSITIONING] = true;
+                }
+
+                LED_CONTROLLER.waiting_for_time_breathing_animation();
+                break;
+            case TIME_SYNCED_S:
+                if (!FLAGS[TRANSITIONING]) {
+                    NEXT_STATE = NORMAL_OPERATION;
+                    FLAGS[TRANSITIONING] = true;
+                    FLAGS[FADING_OUT] = true;
+                }
+
+                LED_CONTROLLER.time_synced_blink();
+                break;
+            case NORMAL_OPERATION:
+                // Trigger a transition if the time string has changed
+                if (!FLAGS[UPDATING_TIME_STRING] && strncmp(STRINGS[CURRENT_TIME], STRINGS[TARGET_TIME], 10) != 0) {
+                    FLAGS[TRANSITIONING] = true;
+                    FLAGS[UPDATING_TIME_STRING] = true;
+                    FLAGS[FADING_OUT] = true;
+                }
+                // Update the current time string after fading out
+                if (FLAGS[UPDATING_TIME_STRING] && FLAGS[FADING_IN]) {
+                    set_current_time_to_target_time();
+                    FLAGS[UPDATING_TIME_STRING] = false;
+                }
+            
+                // LED_CONTROLLER.blink();
+                LED_CONTROLLER.show_time();
+                break;
+            default:
+                break;
+        }
+
+        // If time is not being displayed, just update it every frame
+        if (!FLAGS[TRANSITIONING] && (CURR_STATE != NORMAL_OPERATION || CURR_NO_SUBSTATE != SUBSTATE_SHOW_TIME)) {
+            set_current_time_to_target_time();
+        }
+
+        // Handle overlays
+        LED_CONTROLLER.overlay_AP_active(FLAGS[AP_ACTIVE]);
+
+        // Finally write the LED changes
+        LED_CONTROLLER.update();
+
+        if (FLAGS[TRIGGER_STATE_CHANGE]) {
+            PREV_STATE = CURR_STATE;
+            CURR_STATE = NEXT_STATE;
+            FLAGS[TRIGGER_STATE_CHANGE] = false;
+        }
+    }
+
+    delay(1);
 }

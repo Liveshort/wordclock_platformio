@@ -146,7 +146,7 @@ void WCNetworkManager::setup_server() {
         String json = "{\"status\":\"" + String(wifi_status_string[wifi_status]) +
                      "\",\"ssid\":\"" + wifi_ssid +
                      "\",\"last_connected\":\"" + last_connected + 
-                     "\",\"time\":\"" + STRINGS[TIME] + 
+                     "\",\"time\":\"" + STRINGS[TARGET_TIME] + 
                      "\",\"timezone\":\"" + STRINGS[TIME_ZONE] + 
                      "\",\"time_last_updated\":\"" + last_time_sync_string + "\"}";
 
