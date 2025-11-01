@@ -1,0 +1,49 @@
+{
+    // Use clang-format for C/C++ formatting
+    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.clang_format_style": "file",
+    "C_Cpp.clang_format_fallbackStyle": "Google",
+
+    // Auto-format on save for C/C++ only
+    "[cpp]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "[c]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+
+    // Disable auto-format for other languages (Python, JSON, etc.)
+    "[python]": {
+        "editor.formatOnSave": false
+    },
+    "[json]": {
+        "editor.formatOnSave": false
+    },
+    "[jsonc]": {
+        "editor.formatOnSave": false
+    },
+    "[markdown]": {
+        "editor.formatOnSave": false
+    },
+    "[yaml]": {
+        "editor.formatOnSave": false
+    },
+
+    // Editor settings to match .clang-format
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.rulers": [120],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+
+    // Exclude build directories
+    "files.exclude": {
+        "**/.pio": true
+    },
+    "search.exclude": {
+        "**/.pio": true
+    }
+}
