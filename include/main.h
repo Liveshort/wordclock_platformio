@@ -109,5 +109,6 @@ extern Logger LOGGER;
 extern Storage STORAGE;
 extern WCNetworkManager NETWORK_MANAGER;
 extern LEDController LED_CONTROLLER;
+extern byte MINUTE_DOTS;
 
 #endif

@@ -5,7 +5,7 @@
 #include "main.h"
 
 #define LED_PIN             13
-#define BRIGHTNESS          255
+#define BRIGHTNESS          128
 #define LED_TYPE            WS2812
 #define COLOR_ORDER         GRB
 #define ANIMATION_FPS       60
@@ -197,6 +197,12 @@ void LEDController::show_time() {
 
             leds_logical[led_index] = CRGB::White;
         }
+    }
+    
+    // Light up the minute dots (0-4 dots based on MINUTE_DOTS)
+    for (int i = 0; i < MINUTE_DOTS; i++)
+    {
+        leds_logical[169 + i] = CRGB::White;
     }
 
     if (FLAGS[FADING_OUT]) fade_out();

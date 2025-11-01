@@ -79,6 +79,7 @@ bool update_time() {
         if (timeinfo.tm_sec >= 30) rounded_min = (timeinfo.tm_min + 3) / 5 * 5;
         else rounded_min = (timeinfo.tm_min + 2) / 5 * 5;
     }
+    MINUTE_DOTS = timeinfo.tm_min % 5;
     rounded_hour = timeinfo.tm_hour;
     // For 20+ minutes, round up the hour (e.g. 12:20 -> tien voor half een)
     if (rounded_min >= 20) rounded_hour = (timeinfo.tm_hour + 1) % 12;
