@@ -12,6 +12,9 @@
 // External reference to LED array from led_control.cpp
 extern CRGB leds_logical[];
 
+// External reference to LED array from led_control.cpp
+extern CRGB leds_logical[];
+
 bool FLAGS[FLAG_COUNT];
 char* STRINGS[STRING_COUNT];
 unsigned long TIMERS[TIMER_COUNT];
