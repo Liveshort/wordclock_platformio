@@ -47,6 +47,7 @@ enum TIMERS {
     WIFI_CONNECTED_T,      // Last time WiFi was connected
     WIFI_CONNECT_FAILED,   // Last time WiFi connection failed
     INTERRUPT_DEBOUNCE,    // Last time a button interrupt was handled
+    DRAWING_BOARD_TIMER,   // Timer for drawing board activity
     TIMER_COUNT
 };
 extern unsigned long TIMERS[];
@@ -68,6 +69,7 @@ enum SUPER_STATE {
     WAITING_FOR_TIME_SYNC,
     TIME_SYNCED_S,
     NORMAL_OPERATION,
+    DRAWING_BOARD,
     FORCED_SAYING,
     TIMER_SET,
     TIMER_RUNNING,
@@ -101,6 +103,8 @@ extern byte ANIMATION_STATES[];
 
 extern byte CURRENT_TIME_WORDS[];
 extern byte TARGET_TIME_WORDS[];
+extern byte DRAWING_BOARD_LEDS[174];
+extern byte DRAWING_BOARD_COLORS[174][3];  // RGB colors for each LED
 
 extern Logger LOGGER;
 extern Storage STORAGE;

@@ -104,6 +104,94 @@ void WCNetworkManager::setup_server() {
             return request->requestAuthentication();
         request->send_P(200, "text/html", log_html);
     });
+    
+    server.on("/drawing_board", HTTP_GET, [this](AsyncWebServerRequest *request){
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+        request->send_P(200, "text/html", drawing_board_html);
+        // Enter drawing board mode
+        if (CURR_STATE != DRAWING_BOARD) {
+            NEXT_STATE = DRAWING_BOARD;
+            FLAGS[TRIGGER_STATE_CHANGE] = true;
+            TIMERS[DRAWING_BOARD_TIMER] = millis();
+            LOGGER.println("Entering drawing board mode");
+        }
+    });
+    
+    server.on("/get_leds", HTTP_GET, [this](AsyncWebServerRequest *request){
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+        
+        // Build JSON response with LED states
+        String json = "{\"leds\":[";
+        for (int i = 0; i < 174; i++) {
+            json += String(DRAWING_BOARD_LEDS[i]);
+            if (i < 173) json += ",";
+        }
+        json += "]}";
+        request->send(200, "application/json", json);
+    });
+    
+    server.on("/set_led", HTTP_POST, [this](AsyncWebServerRequest *request){
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+        
+        if (request->hasParam("led", true) && request->hasParam("state", true)) {
+            int led = request->getParam("led", true)->value().toInt();
+            int state = request->getParam("state", true)->value().toInt();
+            
+            if (led >= 0 && led < 174 && (state == 0 || state == 1)) {
+                DRAWING_BOARD_LEDS[led] = state;
+                
+                // Get RGB color values if provided
+                if (request->hasParam("r", true) && request->hasParam("g", true) && request->hasParam("b", true)) {
+                    DRAWING_BOARD_COLORS[led][0] = request->getParam("r", true)->value().toInt();
+                    DRAWING_BOARD_COLORS[led][1] = request->getParam("g", true)->value().toInt();
+                    DRAWING_BOARD_COLORS[led][2] = request->getParam("b", true)->value().toInt();
+                }
+                
+                TIMERS[DRAWING_BOARD_TIMER] = millis(); // Reset timeout
+                
+                // Ensure we're in drawing board mode
+                if (CURR_STATE != DRAWING_BOARD) {
+                    NEXT_STATE = DRAWING_BOARD;
+                    FLAGS[TRIGGER_STATE_CHANGE] = true;
+                }
+                
+                request->send(200, "text/plain", "OK");
+            } else {
+                request->send(400, "text/plain", "Invalid parameters");
+            }
+        } else {
+            request->send(400, "text/plain", "Missing parameters");
+        }
+    });
+    
+    server.on("/clear_leds", HTTP_POST, [this](AsyncWebServerRequest *request){
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+        
+        // Clear all LEDs
+        for (int i = 0; i < 174; i++) {
+            DRAWING_BOARD_LEDS[i] = 0;
+        }
+        TIMERS[DRAWING_BOARD_TIMER] = millis(); // Reset timeout
+        LOGGER.println("Drawing board cleared");
+        request->send(200, "text/plain", "Cleared");
+    });
+    
+    server.on("/exit_drawing_board", HTTP_POST, [this](AsyncWebServerRequest *request){
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+        
+        // Return to normal operation
+        if (CURR_STATE == DRAWING_BOARD) {
+            NEXT_STATE = NORMAL_OPERATION;
+            FLAGS[TRIGGER_STATE_CHANGE] = true;
+            LOGGER.println("Exiting drawing board mode");
+        }
+        request->send(200, "text/plain", "OK");
+    });
 
     server.on("/scan_wifi_networks", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (http_login_enabled && !request->authenticate(http_user, http_pass))
