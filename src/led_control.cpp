@@ -264,3 +264,14 @@ void LEDController::update() {
 
     FastLED.show();
 }
+
+void LEDController::show_drawing_board() {
+    // Display LEDs based on DRAWING_BOARD_LEDS array with colors
+    for (int i = 0; i < NUM_LEDS_LOGICAL; i++) {
+        if (DRAWING_BOARD_LEDS[i] == 1) {
+            leds_logical[i] = CRGB(DRAWING_BOARD_COLORS[i][0], DRAWING_BOARD_COLORS[i][1], DRAWING_BOARD_COLORS[i][2]);
+        } else {
+            leds_logical[i] = CRGB::Black;
+        }
+    }
+}

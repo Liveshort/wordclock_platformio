@@ -9,12 +9,6 @@
 #include "persistent_storage.h"
 #include "time_functions.h"
 
-// External reference to LED array from led_control.cpp
-extern CRGB leds_logical[];
-
-// External reference to LED array from led_control.cpp
-extern CRGB leds_logical[];
-
 bool FLAGS[FLAG_COUNT];
 char* STRINGS[STRING_COUNT];
 unsigned long TIMERS[TIMER_COUNT];
@@ -138,6 +132,15 @@ void loop() {
         LOGGER.println("GEZEGDE button pressed!");
     }
 
+    // Handle server-requested state changes
+    if (FLAGS[SERVER_REQUESTS_DRAWING_BOARD] && CURR_STATE == NORMAL_OPERATION) {
+        FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = false;
+        NEXT_STATE = DRAWING_BOARD;
+        FLAGS[TRIGGER_STATE_CHANGE] = true;
+        TIMERS[DRAWING_BOARD_TIMER] = millis();
+        LOGGER.println("Server requested drawing board mode");
+    }
+
     // Try to keep the LED updates at ~60 FPS
     EVERY_N_MILLISECONDS(17) {
         switch (CURR_STATE) {
@@ -199,22 +202,15 @@ void loop() {
                 LED_CONTROLLER.show_time();
                 break;
             case DRAWING_BOARD:
-                // Display LEDs based on DRAWING_BOARD_LEDS array with colors
-                for (int i = 0; i < 174; i++) {
-                    if (DRAWING_BOARD_LEDS[i] == 1) {
-                        leds_logical[i] =
-                            CRGB(DRAWING_BOARD_COLORS[i][0], DRAWING_BOARD_COLORS[i][1], DRAWING_BOARD_COLORS[i][2]);
-                    } else {
-                        leds_logical[i] = CRGB::Black;
-                    }
-                }
-
                 // Check for timeout (return to normal after 5 minutes of inactivity)
                 if (millis() - TIMERS[DRAWING_BOARD_TIMER] > 300000) {
                     LOGGER.println("Drawing board timeout - returning to normal operation");
                     NEXT_STATE = NORMAL_OPERATION;
                     FLAGS[TRIGGER_STATE_CHANGE] = true;
                 }
+
+                // Display drawing board LEDs
+                LED_CONTROLLER.show_drawing_board();
                 break;
             default:
                 break;

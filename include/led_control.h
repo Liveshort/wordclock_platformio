@@ -14,6 +14,7 @@ class LEDController {
     void waiting_for_time_breathing_animation();
     void time_synced_blink();
     void show_time();
+    void show_drawing_board();  // Display drawing board LEDs with colors
     void update();
 };
 

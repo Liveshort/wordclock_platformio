@@ -25,6 +25,7 @@ enum FLAGS {
     FADING_OUT,            // True if currently fading out (blocking)
     CROSSFADING,           // True if currently crossfading between two animations
     UPDATING_TIME_STRING,  // True if currently updating the time string
+    SERVER_REQUESTS_DRAWING_BOARD,  // Server wants to enter drawing board mode
     FLAG_COUNT
 };
 extern bool FLAGS[];
