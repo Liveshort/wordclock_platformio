@@ -136,7 +136,10 @@ void loop() {
     if (FLAGS[SERVER_REQUESTS_DRAWING_BOARD] && CURR_STATE == NORMAL_OPERATION) {
         FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = false;
         NEXT_STATE = DRAWING_BOARD;
+        FLAGS[TRANSITIONING] = true;
         FLAGS[TRIGGER_STATE_CHANGE] = true;
+        FLAGS[CROSSFADING] = true;
+        LED_CONTROLLER.setup_crossfade();
         TIMERS[DRAWING_BOARD_TIMER] = millis();
         LOGGER.println("Server requested drawing board mode");
     }
@@ -198,7 +201,6 @@ void loop() {
                     FLAGS[UPDATING_TIME_STRING] = false;
                 }
 
-                // LED_CONTROLLER.blink();
                 LED_CONTROLLER.show_time();
                 break;
             case DRAWING_BOARD:
@@ -206,7 +208,8 @@ void loop() {
                 if (millis() - TIMERS[DRAWING_BOARD_TIMER] > 300000) {
                     LOGGER.println("Drawing board timeout - returning to normal operation");
                     NEXT_STATE = NORMAL_OPERATION;
-                    FLAGS[TRIGGER_STATE_CHANGE] = true;
+                    FLAGS[TRANSITIONING] = true;
+                    FLAGS[FADING_OUT] = true;
                 }
 
                 // Display drawing board LEDs
