@@ -19,6 +19,7 @@ byte TARGET_TIME_WORDS[7];
 byte MINUTE_DOTS[5];
 byte DRAWING_BOARD_LEDS[174];
 byte DRAWING_BOARD_COLORS[174][3];  // RGB colors for each LED
+int LIGHT_SENSOR_VALUES[2][10];
 Logger LOGGER;
 Storage STORAGE;
 WCNetworkManager NETWORK_MANAGER;
@@ -67,6 +68,10 @@ void initialize_globals_and_workers() {
         DRAWING_BOARD_COLORS[i][1] = 255;  // G
         DRAWING_BOARD_COLORS[i][2] = 255;  // B
     }
+
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 10; ++j)
+            LIGHT_SENSOR_VALUES[i][j] = 0;
 
     LOGGER = Logger();
     STORAGE = Storage();
@@ -122,28 +127,27 @@ void trigger_slow_transition() {
     FLAGS[FADING_OUT] = true;
 }
 
-int compare_time_words(byte current_time_words[], byte target_time_words[], uint8_t len) {
-    for (uint8_t i = 0; i < len; ++i)
-        if (current_time_words[i] != target_time_words[i])
-            return (1);
+// Light sensor array keeps track of the past 10 values of each side, so that an average can be taken.
+// It uses a sliding index to overwrite the last value of each array. If it reaches the end, it starts again at the
+// start.
+void update_light_sensor_values() {
+    static byte index = 0;
 
-    return (0);
+    LIGHT_SENSOR_VALUES[0][index] = analogRead(33);
+    LIGHT_SENSOR_VALUES[1][index] = analogRead(32);
+
+    Serial.println("Light levels - Left: " + String(LIGHT_SENSOR_VALUES[0][index]) +
+                   " | Right: " + String(LIGHT_SENSOR_VALUES[1][index]));
+
+    index = (index + 1) % 10;
 }
 
 void loop() {
-    // int light_transistor_value = analogRead(4);
-    // int ldr_value = analogRead(2);
-
-    // Serial.println("Transistor: " + String(light_transistor_value) + "| LDR: " + String(ldr_value));
-
+    //
     EVERY_N_MILLISECONDS(500) {
         NETWORK_MANAGER.update();
         update_time();
-
-        int left_light_level = analogRead(33);
-        int right_light_level = analogRead(32);
-
-        Serial.println("Light levels - Left: " + String(left_light_level) + " | Right: " + String(right_light_level));
+        update_light_sensor_values();
     }
 
     // Check for button presses

@@ -227,22 +227,6 @@ void LEDController::show_time() {
         crossfade();
 }
 
-void LEDController::update() {
-    // Map logical LED array to physical LEDs
-    for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)
-        leds_physical[i] = CRGB::Black;
-    for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
-        leds_physical[L2P[i]] = leds_logical[i];
-
-    // Apply gamma correction based on average light level, this makes the brightness levels appear more linear to the
-    // human eye
-    for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)
-        leds_physical[i].fadeToBlackBy(
-            GAMMA_CORRECTION_PERCENTAGE[max(leds_physical[i].r, max(leds_physical[i].g, leds_physical[i].b))]);
-
-    FastLED.show();
-}
-
 void LEDController::show_drawing_board() {
     // Display LEDs based on DRAWING_BOARD_LEDS array with colors
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++) {
@@ -252,4 +236,36 @@ void LEDController::show_drawing_board() {
             leds_logical[i] = CRGB::Black;
         }
     }
+}
+
+void LEDController::update() {
+    // Map logical LED array to physical LEDs
+    for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)
+        leds_physical[i] = CRGB::Black;
+    for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
+        leds_physical[L2P[i]] = leds_logical[i];
+
+    // Set the overall brightness based on the average light level
+    int left_light_average = 0;
+    int right_light_average = 0;
+    for (int i = 0; i < 10; ++i) {
+        left_light_average += LIGHT_SENSOR_VALUES[0][i];
+        right_light_average += LIGHT_SENSOR_VALUES[1][i];
+    }
+
+    left_light_average /= 10;
+    right_light_average /= 10;
+
+    int max_light_average = min(left_light_average, right_light_average);
+
+    for (int i = 0; i < NUM_LEDS_PHYSICAL; ++i)
+        leds_physical[i].fadeToBlackBy(max_light_average / 16);
+
+    // Apply gamma correction based on average light level, this makes the brightness levels appear more linear to the
+    // human eye
+    for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)
+        leds_physical[i].fadeToBlackBy(
+            GAMMA_CORRECTION_PERCENTAGE[max(leds_physical[i].r, max(leds_physical[i].g, leds_physical[i].b))]);
+
+    FastLED.show();
 }

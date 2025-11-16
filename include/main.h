@@ -112,6 +112,8 @@ extern byte MINUTE_DOTS[];
 extern byte DRAWING_BOARD_LEDS[174];
 extern byte DRAWING_BOARD_COLORS[174][3];
 
+extern int LIGHT_SENSOR_VALUES[2][10];
+
 extern Logger LOGGER;
 extern Storage STORAGE;
 extern WCNetworkManager NETWORK_MANAGER;
