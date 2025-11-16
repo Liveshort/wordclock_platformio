@@ -16,7 +16,7 @@ volatile bool BUTTONS_PRESSED[BUTTON_COUNT];
 byte ANIMATION_STATES[ANIMATION_COUNT];
 byte CURRENT_TIME_WORDS[7];
 byte TARGET_TIME_WORDS[7];
-byte MINUTE_DOTS = 0;
+byte MINUTE_DOTS[5];
 byte DRAWING_BOARD_LEDS[174];
 byte DRAWING_BOARD_COLORS[174][3];  // RGB colors for each LED
 Logger LOGGER;
@@ -51,10 +51,12 @@ void initialize_globals_and_workers() {
         ANIMATION_STATES[i] = 0;
     ANIMATION_STATES[BLOCKING_FADE] = 255;
 
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < 7; ++i)
         CURRENT_TIME_WORDS[i] = 255;
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < 7; ++i)
         TARGET_TIME_WORDS[i] = 255;
+    for (int i = 0; i < 5; ++i)
+        MINUTE_DOTS[i] = 0;
 
     for (int i = 0; i < 174; ++i) {
         DRAWING_BOARD_LEDS[i] = 0;

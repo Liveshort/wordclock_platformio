@@ -74,13 +74,48 @@ bool update_time() {
     int rounded_hour, rounded_min;
     if (FLAGS[ROUND_DOWN_TIME]) {
         rounded_min = timeinfo.tm_min / 5 * 5;
+
+        // Minute dots will fill up from left to right within the 5-minute interval
+        // E.g. at 12:07, 2 dots will be lit (for 5 and 6), and the 3rd dot will be partially lit based on seconds
+        int curr_min_mod = timeinfo.tm_min % 5;
+        for (int i = 0; i <= curr_min_mod; ++i)
+            MINUTE_DOTS[i] = 255;
+        for (int i = curr_min_mod + 1; i < 5; ++i)
+            MINUTE_DOTS[i] = 0;
+        MINUTE_DOTS[curr_min_mod + 1] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
     } else {
         if (timeinfo.tm_sec >= 30)
             rounded_min = (timeinfo.tm_min + 3) / 5 * 5;
         else
             rounded_min = (timeinfo.tm_min + 2) / 5 * 5;
+
+        // Minute dots will behave differently if centered time is chosen
+        // On full minutes exactly one minute dot will be lit, according to the minute within the interval
+        // E.g. at 12:28, the first dot will be fully lit. At 12:29, the second dot will be fully lit.
+        // Finally at 12:32, the fifth dot will be fully lit.
+        // Between full minutes, the current dot will fade out, while the next dot fades in
+        // E.g. at 12:28:30, the first dot will be half lit, and the second dot will be half lit.
+        int curr_min_mod = timeinfo.tm_min % 10;
+        for (int i = 0; i < 5; ++i)
+            MINUTE_DOTS[i] = 0;
+        if ((curr_min_mod == 2 || curr_min_mod == 7) && timeinfo.tm_sec >= 30) {
+            MINUTE_DOTS[0] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
+        } else if (curr_min_mod == 3 || curr_min_mod == 8) {
+            MINUTE_DOTS[0] = (uint8_t) ((60 - timeinfo.tm_sec) * 255 / 60);
+            MINUTE_DOTS[1] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
+        } else if (curr_min_mod == 4 || curr_min_mod == 9) {
+            MINUTE_DOTS[1] = (uint8_t) ((60 - timeinfo.tm_sec) * 255 / 60);
+            MINUTE_DOTS[2] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
+        } else if (curr_min_mod == 5 || curr_min_mod == 0) {
+            MINUTE_DOTS[2] = (uint8_t) ((60 - timeinfo.tm_sec) * 255 / 60);
+            MINUTE_DOTS[3] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
+        } else if (curr_min_mod == 6 || curr_min_mod == 1) {
+            MINUTE_DOTS[3] = (uint8_t) ((60 - timeinfo.tm_sec) * 255 / 60);
+            MINUTE_DOTS[4] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
+        } else if (curr_min_mod == 7 || curr_min_mod == 2) {
+            MINUTE_DOTS[4] = (uint8_t) ((60 - timeinfo.tm_sec) * 255 / 60);
+        }
     }
-    MINUTE_DOTS = timeinfo.tm_min % 5;
     rounded_hour = timeinfo.tm_hour;
     // For 20+ minutes, round up the hour (e.g. 12:20 -> tien voor half een)
     if (rounded_min >= 20)

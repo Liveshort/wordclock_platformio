@@ -10,7 +10,6 @@
 #define COLOR_ORDER GRB
 #define ANIMATION_FPS 60
 
-#define NUM_LEDS 4
 #define NUM_LEDS_PHYSICAL 186
 #define NUM_LEDS_LOGICAL 174
 #define BREATHING_CYCLE_S 4
@@ -18,9 +17,7 @@
 #define CROSSFADE_LENGTH_MS 300
 #define WIFI_LED_INDEX 168
 
-CRGB leds_source[NUM_LEDS];
-CRGB leds_target[NUM_LEDS];
-CRGB leds[NUM_LEDS];
+CRGB leds_source[NUM_LEDS_LOGICAL];
 CRGB leds_physical[NUM_LEDS_PHYSICAL];
 CRGB leds_logical[NUM_LEDS_LOGICAL];
 
@@ -56,7 +53,7 @@ void fade_in() {
 }
 
 void crossfade() {
-    static int8_t direction = 255 / (ANIMATION_FPS * (CROSSFADE_LENGTH_MS / 1000));
+    static int8_t direction = 255 / (ANIMATION_FPS * CROSSFADE_LENGTH_MS / 1000);
     static int8_t step = direction;
 
     ANIMATION_STATES[CROSSFADE] += direction;
@@ -219,10 +216,9 @@ void LEDController::show_time() {
         }
     }
 
-    // Light up the minute dots (0-4 dots based on MINUTE_DOTS)
-    for (int i = 0; i < MINUTE_DOTS; i++) {
-        leds_logical[169 + i] = CRGB::White;
-    }
+    // Light up the minute dots, blend based on how many minute dots are set
+    for (int i = 0; i < 5; i++)
+        leds_logical[169 + i] = blend(CRGB::Black, CRGB::White, MINUTE_DOTS[i]);
 
     if (FLAGS[FADING_OUT])
         fade_out();

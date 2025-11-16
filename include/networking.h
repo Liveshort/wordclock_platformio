@@ -1,6 +1,8 @@
 #ifndef _NETWORKING_H_
 #define _NETWORKING_H_
 
+#include <Arduino.h>
+
 class WCNetworkManager {
    private:
     unsigned int wifi_connect_attempt_counter;

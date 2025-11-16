@@ -3,6 +3,8 @@
 
 #define LOG_MAX_LENGTH 20
 
+#include <Arduino.h>
+
 class Logger {
    private:
     String _serial_history[LOG_MAX_LENGTH + 1];

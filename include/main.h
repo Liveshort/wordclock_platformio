@@ -1,6 +1,7 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
+#include <Arduino.h>
 #include <Preferences.h>
 
 #include "led_control.h"
@@ -105,13 +106,13 @@ extern byte ANIMATION_STATES[];
 
 extern byte CURRENT_TIME_WORDS[];
 extern byte TARGET_TIME_WORDS[];
+extern byte MINUTE_DOTS[];
 extern byte DRAWING_BOARD_LEDS[174];
-extern byte DRAWING_BOARD_COLORS[174][3];  // RGB colors for each LED
+extern byte DRAWING_BOARD_COLORS[174][3];
 
 extern Logger LOGGER;
 extern Storage STORAGE;
 extern WCNetworkManager NETWORK_MANAGER;
 extern LEDController LED_CONTROLLER;
-extern byte MINUTE_DOTS;
 
 #endif

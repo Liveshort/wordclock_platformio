@@ -1,6 +1,8 @@
 #ifndef _LED_FUNCTIONS_H_
 #define _LED_FUNCTIONS_H_
 
+#include <Arduino.h>
+
 class LEDController {
    private:
     // Private members can be added here if needed
