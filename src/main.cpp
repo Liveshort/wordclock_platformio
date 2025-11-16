@@ -98,6 +98,23 @@ void setup() {
     LED_CONTROLLER.initialize_led_controller();
 }
 
+// A fast transition can interrupt a slow transition. If this happens, we need to make sure the flags are reset.
+void trigger_fast_transition() {
+    FLAGS[TRANSITIONING] = true;
+    FLAGS[TRIGGER_STATE_CHANGE] = true;
+    FLAGS[CROSSFADING] = true;
+    LED_CONTROLLER.save_current_state();
+
+    FLAGS[FADING_IN] = false;
+    FLAGS[FADING_OUT] = false;
+}
+
+// A slow transition cannot interrupt a fast transition, so no need to reset flags here.
+void trigger_slow_transition() {
+    FLAGS[TRANSITIONING] = true;
+    FLAGS[FADING_OUT] = true;
+}
+
 void loop() {
     // int light_transistor_value = analogRead(4);
     // int ldr_value = analogRead(2);
@@ -138,10 +155,7 @@ void loop() {
     if (FLAGS[SERVER_REQUESTS_DRAWING_BOARD] && CURR_STATE == NORMAL_OPERATION) {
         FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = false;
         NEXT_STATE = DRAWING_BOARD;
-        FLAGS[TRANSITIONING] = true;
-        FLAGS[TRIGGER_STATE_CHANGE] = true;
-        FLAGS[CROSSFADING] = true;
-        LED_CONTROLLER.setup_crossfade();
+        trigger_fast_transition();
         TIMERS[DRAWING_BOARD_TIMER] = millis();
         LOGGER.println("Server requested drawing board mode");
     }
@@ -193,9 +207,8 @@ void loop() {
             case NORMAL_OPERATION:
                 // Trigger a transition if the time string has changed
                 if (!FLAGS[UPDATING_TIME_STRING] && strncmp(STRINGS[CURRENT_TIME], STRINGS[TARGET_TIME], 10) != 0) {
-                    FLAGS[TRANSITIONING] = true;
+                    trigger_slow_transition();
                     FLAGS[UPDATING_TIME_STRING] = true;
-                    FLAGS[FADING_OUT] = true;
                 }
                 // Update the current time string after fading out
                 if (FLAGS[UPDATING_TIME_STRING] && FLAGS[FADING_IN]) {
@@ -210,8 +223,7 @@ void loop() {
                 if (millis() - TIMERS[DRAWING_BOARD_TIMER] > 300000) {
                     LOGGER.println("Drawing board timeout - returning to normal operation");
                     NEXT_STATE = NORMAL_OPERATION;
-                    FLAGS[TRANSITIONING] = true;
-                    FLAGS[FADING_OUT] = true;
+                    trigger_slow_transition();
                 }
 
                 // Display drawing board LEDs

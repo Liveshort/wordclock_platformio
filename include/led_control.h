@@ -8,7 +8,7 @@ class LEDController {
     // Private members can be added here if needed
    public:
     void initialize_led_controller();
-    void setup_crossfade();
+    void save_current_state();
     void overlay_AP_active(bool ap_active);
     void waiting_for_wifi_breathing_animation();
     void waiting_for_wifi_failed();

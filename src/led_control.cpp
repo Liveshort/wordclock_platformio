@@ -72,7 +72,7 @@ void LEDController::initialize_led_controller() {
     FastLED.setBrightness(BRIGHTNESS);
 }
 
-void LEDController::setup_crossfade() {
+void LEDController::save_current_state() {
     ANIMATION_STATES[CROSSFADE] = 0;
     for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
         leds_source[i] = leds_logical[i];
