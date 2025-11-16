@@ -32,10 +32,12 @@ enum FLAGS {
 extern bool FLAGS[];
 
 enum STRINGS {
-    CURRENT_TIME,  // Current time as string HH:MM:SS
-    TARGET_TIME,   // Target time as string HH:MM:SS
-    TIMESTAMP,     // Current timestamp as string DD-MMM HH:MM:SS
-    TIME_ZONE,     // Current time zone as string (e.g. CEST (+0200))
+    CURRENT_TIME,          // Current time as string HH:MM:SS
+    TARGET_TIME,           // Target time as string HH:MM:SS
+    CURRENT_ROUNDED_TIME,  // Current time as string HH:MM rounded to nearest 5 minutes
+    TARGET_ROUNDED_TIME,   // Target time as string HH:MM rounded to nearest 5 minutes
+    TIMESTAMP,             // Current timestamp as string DD-MMM HH:MM:SS
+    TIME_ZONE,             // Current time zone as string (e.g. CEST (+0200))
     STRING_COUNT
 };
 extern char* STRINGS[];

@@ -31,13 +31,16 @@ void initialize_globals_and_workers() {
         FLAGS[i] = false;
 
     // Initialize global strings
-
     STRINGS[CURRENT_TIME] = new char[10];
     STRINGS[TARGET_TIME] = new char[10];
+    STRINGS[CURRENT_ROUNDED_TIME] = new char[10];
+    STRINGS[TARGET_ROUNDED_TIME] = new char[10];
     STRINGS[TIMESTAMP] = new char[20];
     STRINGS[TIME_ZONE] = new char[20];
     strncpy(STRINGS[CURRENT_TIME], "--:--:--", 10);
     strncpy(STRINGS[TARGET_TIME], "--:--:--", 10);
+    strncpy(STRINGS[CURRENT_ROUNDED_TIME], "--:--", 10);
+    strncpy(STRINGS[TARGET_ROUNDED_TIME], "--:--", 10);
     strncpy(STRINGS[TIMESTAMP], "------ --:--:--", 20);
     strncpy(STRINGS[TIME_ZONE], "-", 20);
 
@@ -99,6 +102,9 @@ void setup() {
 }
 
 // A fast transition can interrupt a slow transition. If this happens, we need to make sure the flags are reset.
+// A fast transition is used for user interactions, while a slow transition is used for automatic time updates.
+// The state change to NEXT_STATE is handled in the main loop after this function is called and is immediate.
+// It takes a snapshot of the current LED state for crossfading and uses that as the source for the crossfade.
 void trigger_fast_transition() {
     FLAGS[TRANSITIONING] = true;
     FLAGS[TRIGGER_STATE_CHANGE] = true;
@@ -110,9 +116,18 @@ void trigger_fast_transition() {
 }
 
 // A slow transition cannot interrupt a fast transition, so no need to reset flags here.
+// The old state is allowed to update during the fade out. The state change is triggered after fade out is complete.
 void trigger_slow_transition() {
     FLAGS[TRANSITIONING] = true;
     FLAGS[FADING_OUT] = true;
+}
+
+int compare_time_words(byte current_time_words[], byte target_time_words[], uint8_t len) {
+    for (uint8_t i = 0; i < len; ++i)
+        if (current_time_words[i] != target_time_words[i])
+            return (1);
+
+    return (0);
 }
 
 void loop() {
@@ -125,8 +140,10 @@ void loop() {
         NETWORK_MANAGER.update();
         update_time();
 
-        // Temporarily set current time to target time for testing
-        set_current_time_to_target_time();
+        int left_light_level = analogRead(33);
+        int right_light_level = analogRead(32);
+
+        Serial.println("Light levels - Left: " + String(left_light_level) + " | Right: " + String(right_light_level));
     }
 
     // Check for button presses
@@ -198,15 +215,16 @@ void loop() {
             case TIME_SYNCED_S:
                 if (!FLAGS[TRANSITIONING]) {
                     NEXT_STATE = NORMAL_OPERATION;
-                    FLAGS[TRANSITIONING] = true;
-                    FLAGS[FADING_OUT] = true;
+                    set_current_time_to_target_time();
+                    trigger_slow_transition();
                 }
 
                 LED_CONTROLLER.time_synced_blink();
                 break;
             case NORMAL_OPERATION:
                 // Trigger a transition if the time string has changed
-                if (!FLAGS[UPDATING_TIME_STRING] && strncmp(STRINGS[CURRENT_TIME], STRINGS[TARGET_TIME], 10) != 0) {
+                if (!FLAGS[TRANSITIONING] && !FLAGS[UPDATING_TIME_STRING] &&
+                    strncmp(STRINGS[CURRENT_ROUNDED_TIME], STRINGS[TARGET_ROUNDED_TIME], 10) != 0) {
                     trigger_slow_transition();
                     FLAGS[UPDATING_TIME_STRING] = true;
                 }

@@ -134,6 +134,9 @@ bool update_time() {
     if (rounded_min == 60)
         rounded_min = 0;
 
+    // Write the time as a rounded string
+    snprintf(STRINGS[TARGET_ROUNDED_TIME], 10, "%d:%d", rounded_hour, rounded_min);
+
     for (int i = 0; i < 7; ++i)
         TARGET_TIME_WORDS[i] = 255;
 
@@ -256,6 +259,7 @@ bool update_time() {
 
 void set_current_time_to_target_time() {
     strncpy(STRINGS[CURRENT_TIME], STRINGS[TARGET_TIME], 10);
+    strncpy(STRINGS[CURRENT_ROUNDED_TIME], STRINGS[TARGET_ROUNDED_TIME], 10);
     for (int i = 0; i < 7; ++i) {
         CURRENT_TIME_WORDS[i] = TARGET_TIME_WORDS[i];
     }

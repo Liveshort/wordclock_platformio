@@ -179,7 +179,6 @@ void LEDController::time_synced_blink() {
     if (((ANIMATION_STATES[TIME_SYNCED_BLINK] / 32) % 2 == 0) && ANIMATION_STATES[TIME_SYNCED_BLINK] < 128)
         for (int i = 0; i < 4; ++i)
             leds_logical[W2LL[TIJD][i]] = CRGB::Black;
-
     else
         for (int i = 0; i < 4; ++i)
             leds_logical[W2LL[TIJD][i]] = CRGB::White;
