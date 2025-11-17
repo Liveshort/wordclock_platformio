@@ -13,19 +13,17 @@ void setup();
 void loop();
 
 enum FLAGS {
-    TIME_INITIALIZED,      // True if time has been synchronized at least once
-    WIFI_ACTIVE,           // True if WiFi is enabled
-    AP_ACTIVE,             // True if Access Point is enabled
-    WIFI_CONNECTING,       // True if currently trying to connect to WiFi
-    WIFI_CONNECTED_F,      // True if WiFi is connected
-    ROUND_DOWN_TIME,       // Setting this to false will make 12:27:30 -> 12:30 and 12:32:29 -> 12:30. true will make it
-                           // 12:29:59 -> 12:25.
-    TRANSITIONING,         // True if currently in a transition between states. This disables state changes.
-    TRIGGER_STATE_CHANGE,  // Set to true to trigger a state change in the next loop iteration
-    FADING_IN,             // True if currently fading in (blocking)
-    FADING_OUT,            // True if currently fading out (blocking)
-    CROSSFADING,           // True if currently crossfading between two animations
-    UPDATING_TIME_STRING,  // True if currently updating the time string
+    TIME_INITIALIZED,               // True if time has been synchronized at least once
+    WIFI_ACTIVE,                    // True if WiFi is enabled
+    AP_ACTIVE,                      // True if Access Point is enabled
+    WIFI_CONNECTING,                // True if currently trying to connect to WiFi
+    WIFI_CONNECTED_F,               // True if WiFi is connected
+    TRANSITIONING,                  // True if currently in a transition between states. This disables state changes.
+    TRIGGER_STATE_CHANGE,           // Set to true to trigger a state change in the next loop iteration
+    FADING_IN,                      // True if currently fading in (blocking)
+    FADING_OUT,                     // True if currently fading out (blocking)
+    CROSSFADING,                    // True if currently crossfading between two animations
+    UPDATING_TIME_STRING,           // True if currently updating the time string
     SERVER_REQUESTS_DRAWING_BOARD,  // Server wants to enter drawing board mode
     FLAG_COUNT
 };
@@ -43,15 +41,16 @@ enum STRINGS {
 extern char* STRINGS[];
 
 enum TIMERS {
-    TIME_SYNC,             // Last time synchronization
-    TIME_UPDATE,           // Last time the time strings were updated
-    WIFI_SCAN,             // Last WiFi scan
-    WIFI_STATUS_UPDATE,    // Last WiFi status update
-    WIFI_CONNECT_ATTEMPT,  // Last WiFi connect attempt
-    WIFI_CONNECTED_T,      // Last time WiFi was connected
-    WIFI_CONNECT_FAILED,   // Last time WiFi connection failed
-    INTERRUPT_DEBOUNCE,    // Last time a button interrupt was handled
-    DRAWING_BOARD_TIMER,   // Timer for drawing board activity
+    TIME_SYNC,              // Last time synchronization
+    TIME_UPDATE,            // Last time the time strings were updated
+    WIFI_SCAN,              // Last WiFi scan
+    WIFI_STATUS_UPDATE,     // Last WiFi status update
+    WIFI_CONNECT_ATTEMPT,   // Last WiFi connect attempt
+    WIFI_CONNECTED_T,       // Last time WiFi was connected
+    WIFI_CONNECT_FAILED,    // Last time WiFi connection failed
+    INTERRUPT_DEBOUNCE,     // Last time a button interrupt was handled
+    SAYING_INTERVAL_TIMER,  // Timer for automatic saying
+    DRAWING_BOARD_TIMER,    // Timer for drawing board activity
     TIMER_COUNT
 };
 extern unsigned long TIMERS[];
@@ -65,6 +64,15 @@ enum BUTTONS {
     BUTTON_COUNT
 };
 extern volatile bool BUTTONS_PRESSED[];
+
+enum USER_SETTINGS {
+    ROUND_DOWN_TIME,  // Setting this to 0 will make 12:27:30 -> 12:30 and 12:32:29 -> 12:30. Any other value will make
+                      // the time always round down in increments of 5 minutes, i.e. 12:29:59 -> 12:25. This settings
+                      // also influences the behavior of the minute dots.
+    SAYING_INTERVAL_S,  // Determines the interval at which sayings occur in seconds.
+    SETTINGS_COUNT
+};
+extern int USER_SETTINGS[];
 
 enum SUPER_STATE {
     INITIALIZING,
@@ -80,12 +88,10 @@ enum SUPER_STATE {
     TIMER_FINISHED,
     NIGHT_MODE
 };
-extern SUPER_STATE PREV_STATE;
 extern SUPER_STATE CURR_STATE;
 extern SUPER_STATE NEXT_STATE;
 
-enum NORMAL_OPERATION_SUBSTATE { SUBSTATE_SHOW_TIME, SUBSTATE_SHOW_SAYING, SUBSTATE_TRANSITION };
-extern NORMAL_OPERATION_SUBSTATE PREV_NO_SUBSTATE;
+enum NORMAL_OPERATION_SUBSTATE { SUBSTATE_SHOW_TIME, SUBSTATE_SHOW_SAYING };
 extern NORMAL_OPERATION_SUBSTATE CURR_NO_SUBSTATE;
 extern NORMAL_OPERATION_SUBSTATE NEXT_NO_SUBSTATE;
 

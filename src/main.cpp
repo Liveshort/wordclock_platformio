@@ -13,6 +13,7 @@ bool FLAGS[FLAG_COUNT];
 char* STRINGS[STRING_COUNT];
 unsigned long TIMERS[TIMER_COUNT];
 volatile bool BUTTONS_PRESSED[BUTTON_COUNT];
+int USER_SETTINGS[SETTINGS_COUNT];
 byte ANIMATION_STATES[ANIMATION_COUNT];
 byte CURRENT_TIME_WORDS[7];
 byte TARGET_TIME_WORDS[7];
@@ -24,8 +25,8 @@ Logger LOGGER;
 Storage STORAGE;
 WCNetworkManager NETWORK_MANAGER;
 LEDController LED_CONTROLLER;
-SUPER_STATE PREV_STATE, CURR_STATE, NEXT_STATE;
-NORMAL_OPERATION_SUBSTATE PREV_NO_SUBSTATE, CURR_NO_SUBSTATE, NEXT_NO_SUBSTATE;
+SUPER_STATE CURR_STATE, NEXT_STATE;
+NORMAL_OPERATION_SUBSTATE CURR_NO_SUBSTATE, NEXT_NO_SUBSTATE;
 
 void initialize_globals_and_workers() {
     for (int i = 0; i < FLAG_COUNT; ++i)
@@ -79,14 +80,16 @@ void initialize_globals_and_workers() {
     NETWORK_MANAGER = WCNetworkManager();
     LED_CONTROLLER = LEDController();
 
-    PREV_STATE = INITIALIZING;
     CURR_STATE = INITIALIZING;
     NEXT_STATE = INITIALIZING;
-    PREV_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
     CURR_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
     NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
 
     initialize_buttons();
+
+    // Default settings
+    USER_SETTINGS[ROUND_DOWN_TIME] = 1;
+    USER_SETTINGS[SAYING_INTERVAL_S] = 280;
 }
 
 void setup() {
@@ -142,8 +145,16 @@ void update_light_sensor_values() {
     index = (index + 1) % 10;
 }
 
+void return_to_normal_operation() {
+    NEXT_STATE = NORMAL_OPERATION;
+    CURR_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+
+    TIMERS[SAYING_INTERVAL_TIMER] = millis();
+    trigger_slow_transition();
+}
+
 void loop() {
-    //
+    // Handle background tasks
     EVERY_N_MILLISECONDS(500) {
         NETWORK_MANAGER.update();
         update_time();
@@ -226,26 +237,40 @@ void loop() {
                 LED_CONTROLLER.time_synced_blink();
                 break;
             case NORMAL_OPERATION:
-                // Trigger a transition if the time string has changed
-                if (!FLAGS[TRANSITIONING] && !FLAGS[UPDATING_TIME_STRING] &&
-                    strncmp(STRINGS[CURRENT_ROUNDED_TIME], STRINGS[TARGET_ROUNDED_TIME], 10) != 0) {
-                    trigger_slow_transition();
-                    FLAGS[UPDATING_TIME_STRING] = true;
-                }
-                // Update the current time string after fading out
-                if (FLAGS[UPDATING_TIME_STRING] && FLAGS[FADING_IN]) {
-                    set_current_time_to_target_time();
-                    FLAGS[UPDATING_TIME_STRING] = false;
-                }
+                switch (CURR_NO_SUBSTATE) {
+                    case SUBSTATE_SHOW_TIME:
+                        // Trigger a transition if the time string has changed
+                        if (!FLAGS[TRANSITIONING] && !FLAGS[UPDATING_TIME_STRING] &&
+                            strncmp(STRINGS[CURRENT_ROUNDED_TIME], STRINGS[TARGET_ROUNDED_TIME], 10) != 0) {
+                            trigger_slow_transition();
+                            FLAGS[UPDATING_TIME_STRING] = true;
+                        }
+                        // Update the current time string after fading out
+                        if (FLAGS[UPDATING_TIME_STRING] && FLAGS[FADING_IN]) {
+                            set_current_time_to_target_time();
+                            FLAGS[UPDATING_TIME_STRING] = false;
+                        }
 
-                LED_CONTROLLER.show_time();
+                        // If the sayings timer has expired, show a saying
+                        if (!FLAGS[TRANSITIONING] &&
+                            (millis() - TIMERS[SAYING_INTERVAL_TIMER] > USER_SETTINGS[SAYING_INTERVAL_S])) {
+                            TIMERS[SAYING_INTERVAL_TIMER] = millis();
+                            NEXT_NO_SUBSTATE = SUBSTATE_SHOW_SAYING;
+                            trigger_slow_transition();
+                        }
+
+                        LED_CONTROLLER.show_time();
+                        break;
+                    case SUBSTATE_SHOW_SAYING:
+
+                        break;
+                }
                 break;
             case DRAWING_BOARD:
                 // Check for timeout (return to normal after 5 minutes of inactivity)
                 if (millis() - TIMERS[DRAWING_BOARD_TIMER] > 300000) {
                     LOGGER.println("Drawing board timeout - returning to normal operation");
-                    NEXT_STATE = NORMAL_OPERATION;
-                    trigger_slow_transition();
+                    return_to_normal_operation();
                 }
 
                 // Display drawing board LEDs
@@ -255,7 +280,7 @@ void loop() {
                 break;
         }
 
-        // If time is not being displayed, just update it every frame
+        // If time is not being displayed, just update the current time every frame
         if (!FLAGS[TRANSITIONING] && (CURR_STATE != NORMAL_OPERATION || CURR_NO_SUBSTATE != SUBSTATE_SHOW_TIME)) {
             set_current_time_to_target_time();
         }
@@ -266,9 +291,12 @@ void loop() {
         // Finally write the LED changes
         LED_CONTROLLER.update();
 
+        // State changes are only triggered when the animations are in a 'good' state, e.g. in between fading out and
+        // fading in or directly when a crossfade is used. When a crossfade is used, the new state handles the complete
+        // transition.
         if (FLAGS[TRIGGER_STATE_CHANGE]) {
-            PREV_STATE = CURR_STATE;
             CURR_STATE = NEXT_STATE;
+            CURR_NO_SUBSTATE = NEXT_NO_SUBSTATE;
             FLAGS[TRIGGER_STATE_CHANGE] = false;
         }
     }

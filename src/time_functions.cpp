@@ -71,7 +71,7 @@ bool update_time() {
     // If true, 12:29:59 -> 12:25 and 12:34:59 -> 12:30
     // If false, 12:27:30 -> 12:30 and 12:32:29 -> 12:30
     int rounded_hour, rounded_min;
-    if (FLAGS[ROUND_DOWN_TIME]) {
+    if (USER_SETTINGS[ROUND_DOWN_TIME]) {
         rounded_min = timeinfo.tm_min / 5 * 5;
 
         // Minute dots will fill up from left to right within the 5-minute interval
