@@ -23,6 +23,7 @@ enum FLAGS {
     FADING_IN,                      // True if currently fading in (blocking)
     FADING_OUT,                     // True if currently fading out (blocking)
     CROSSFADING,                    // True if currently crossfading between two animations
+    TWO_PART_SAYING_GO_TO_PART_2,   // For the two part saying, go to part 2
     UPDATING_TIME_STRING,           // True if currently updating the time string
     SERVER_REQUESTS_DRAWING_BOARD,  // Server wants to enter drawing board mode
     FLAG_COUNT
@@ -50,6 +51,7 @@ enum TIMERS {
     WIFI_CONNECT_FAILED,    // Last time WiFi connection failed
     INTERRUPT_DEBOUNCE,     // Last time a button interrupt was handled
     SAYING_INTERVAL_TIMER,  // Timer for automatic saying
+    RANDOM_SAYING_TIMER,    // Timer for random saying
     DRAWING_BOARD_TIMER,    // Timer for drawing board activity
     TIMER_COUNT
 };
@@ -70,6 +72,8 @@ enum USER_SETTINGS {
                       // the time always round down in increments of 5 minutes, i.e. 12:29:59 -> 12:25. This settings
                       // also influences the behavior of the minute dots.
     SAYING_INTERVAL_S,  // Determines the interval at which sayings occur in seconds.
+    SAYING_DURATION_S,  // Determines how long a saying is displayed in seconds.
+    FADE_CYCLE_S,       // Duration of fade in/out cycles in seconds.
     SETTINGS_COUNT
 };
 extern int USER_SETTINGS[];
@@ -119,6 +123,7 @@ extern byte DRAWING_BOARD_LEDS[174];
 extern byte DRAWING_BOARD_COLORS[174][3];
 
 extern int LIGHT_SENSOR_VALUES[2][10];
+extern int RANDOM_SAYING_INDEX;
 
 extern Logger LOGGER;
 extern Storage STORAGE;

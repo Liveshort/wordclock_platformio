@@ -13,7 +13,6 @@
 #define NUM_LEDS_PHYSICAL 186
 #define NUM_LEDS_LOGICAL 174
 #define BREATHING_CYCLE_S 4
-#define FADE_CYCLE_S 4
 #define CROSSFADE_LENGTH_MS 300
 #define WIFI_LED_INDEX 168
 
@@ -21,8 +20,8 @@ CRGB leds_source[NUM_LEDS_LOGICAL];
 CRGB leds_physical[NUM_LEDS_PHYSICAL];
 CRGB leds_logical[NUM_LEDS_LOGICAL];
 
-void fade_out() {
-    static int8_t direction = 255 / (ANIMATION_FPS * FADE_CYCLE_S / 2);
+void fade_out(bool skip_minute_dots = false) {
+    static int8_t direction = 255 / (ANIMATION_FPS * USER_SETTINGS[FADE_CYCLE_S] / 2);
     static int8_t step = direction;
 
     ANIMATION_STATES[BLOCKING_FADE] -= direction;
@@ -32,13 +31,16 @@ void fade_out() {
         FLAGS[FADING_IN] = true;
         FLAGS[TRIGGER_STATE_CHANGE] = true;
     }
-    for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
+
+    int minute_dots_subtract_index = skip_minute_dots ? 5 : 0;
+
+    for (int i = 0; i < NUM_LEDS_LOGICAL - minute_dots_subtract_index; ++i) {
         leds_logical[i] = blend(CRGB::Black, leds_logical[i], ANIMATION_STATES[BLOCKING_FADE]);
     }
 }
 
-void fade_in() {
-    static int8_t direction = 255 / (ANIMATION_FPS * FADE_CYCLE_S / 2);
+void fade_in(bool skip_minute_dots = false) {
+    static int8_t direction = 255 / (ANIMATION_FPS * USER_SETTINGS[FADE_CYCLE_S] / 2);
     static int8_t step = direction;
 
     ANIMATION_STATES[BLOCKING_FADE] += direction;
@@ -47,7 +49,10 @@ void fade_in() {
         FLAGS[FADING_IN] = false;
         FLAGS[TRANSITIONING] = false;
     }
-    for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
+
+    int minute_dots_subtract_index = skip_minute_dots ? 5 : 0;
+
+    for (int i = 0; i < NUM_LEDS_LOGICAL - minute_dots_subtract_index; ++i) {
         leds_logical[i] = blend(CRGB::Black, leds_logical[i], ANIMATION_STATES[BLOCKING_FADE]);
     }
 }
@@ -192,9 +197,6 @@ void LEDController::time_synced_blink() {
 }
 
 void LEDController::show_time() {
-    static int8_t direction = 255 / (ANIMATION_FPS * 1 / 2);
-    static int8_t step = direction;
-
     // Clear target LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
         leds_logical[i] = CRGB::Black;
@@ -224,6 +226,68 @@ void LEDController::show_time() {
     else if (FLAGS[FADING_IN])
         fade_in();
     else if (FLAGS[CROSSFADING])
+        crossfade();
+}
+
+void LEDController::show_saying(int saying_index) {
+    // Clear target LEDs
+    for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
+        leds_logical[i] = CRGB::Black;
+    }
+
+    // Set target LEDs based on the saying index
+    for (int j = 0; j < 7; ++j) {
+        byte word = SAYINGS[saying_index][j];
+
+        if (word == 255)
+            break;
+
+        for (int k = 0; k < 7; ++k) {
+            byte led_index = W2LL[word][k];
+
+            if (led_index == 255)
+                break;
+
+            leds_logical[led_index] = CRGB::White;
+        }
+    }
+
+    // The minute dots should start all bright and slowly fade one by one to off from right to left
+    // First calculate the permyriads (0 to 10000) of the saying duration that has passed
+    // TODO: Replace the 1000 ms at the end with half the transition time user setting when that is implemented
+    int quarter_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 4;
+    int bips_elapsed = 10000 * ((long) (millis() - TIMERS[RANDOM_SAYING_TIMER]) - quarter_fade_offset_ms) /
+                       (USER_SETTINGS[SAYING_DURATION_S] * 1000);
+    if (bips_elapsed < 0)
+        bips_elapsed = 0;
+    else if (bips_elapsed > 10000)
+        bips_elapsed = 10000;
+
+    int full_dots = (10000 - bips_elapsed) / 2000;               // Each dot represents 2000 permyriads
+    int partial_dot_permyriads = (10000 - bips_elapsed) % 2000;  // Remainder for the partial dot
+
+    for (int i = 0; i < 5; i++) {
+        if (i < full_dots) {
+            leds_logical[169 + i] = CRGB::White;  // Fully on
+        } else if (i == full_dots) {
+            leds_logical[169 + i] =
+                blend(CRGB::Black, CRGB::White, partial_dot_permyriads * 255 / 2000);  // Partial brightness
+        } else {
+            leds_logical[169 + i] = CRGB::Black;  // Fully off
+        }
+    }
+
+    if (FLAGS[FADING_OUT]) {
+        if (FLAGS[TWO_PART_SAYING_GO_TO_PART_2])
+            fade_out(true);  // keep the minute dots on during the transition to part 2
+        else
+            fade_out();
+    } else if (FLAGS[FADING_IN]) {
+        if (FLAGS[TWO_PART_SAYING_GO_TO_PART_2])
+            fade_in(true);  // keep the minute dots on during the transition to part 2
+        else
+            fade_in();
+    } else if (FLAGS[CROSSFADING])
         crossfade();
 }
 

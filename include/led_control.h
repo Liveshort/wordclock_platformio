@@ -16,6 +16,7 @@ class LEDController {
     void waiting_for_time_breathing_animation();
     void time_synced_blink();
     void show_time();
+    void show_saying(int saying_index);
     void show_drawing_board();  // Display drawing board LEDs with colors
     void update();
 };
@@ -88,7 +89,7 @@ inline const char* WORD_STRINGS[] = {"HET",     "DIE",   "ER",   "EN",     "NEEM
 
 // Predefined sayings. Some sayings have two variants for more randomness.
 // The other sayings are duplicated to keep the random selection uniform.
-const byte sayings[][7]{
+const byte SAYINGS[][7]{
     {HET, IS, LATER, DAN, JE, DENKT, 255},       // "HET IS LATER DAN JE DENKT"
     {HET, IS, LATER, DAN, JE, DENKT, 255},       // "HET IS LATER DAN JE DENKT"
     {HET, IS, TIJD, 255, 255, 255, 255},         // "HET IS TIJD"
@@ -102,15 +103,15 @@ const byte sayings[][7]{
     {ER, IS, MEER, TIJD, DAN, JE, DENKT},        // "ER IS MEER TIJD DAN JE DENKT"
     {ER, IS, MEER, TIJD, DAN, JE, DENKT},        // "ER IS MEER TIJD DAN JE DENKT"
     {ER, IS, EEN, TIJD, VAN, KOMEN, 255},        // "ER IS EEN TIJD VAN KOMEN"
-    {ER, IS, EEN, TIJD, VAN, KOMEN, 255},        // "ER IS EEN TIJD VAN KOMEN"
-    {EN, EEN, TIJD, VAN, GAAN, 255, 255},        // "EN EEN TIJD VAN GAAN"
     {ER, IS, EEN, TIJD, VAN, GAAN, 255},         // "ER IS EEN TIJD VAN GAAN"
     {DIE, TIJD, KOMT, NOG, 255, 255, 255},       // "DIE TIJD KOMT NOG"
     {DIE, TIJD, KOMT, NOG, 255, 255, 255},       // "DIE TIJD KOMT NOG"
-    {DIE, TIJD, IS, VOORBIJ, 255, 255, 255},     // "DIE TIJD IS VOORBIJ"
-    {DIE, TIJD, IS, VOORBIJ, 255, 255, 255},     // "DIE TIJD IS VOORBIJ"
+    {DIE, TIJD, IS2, VOORBIJ, 255, 255, 255},    // "DIE TIJD IS VOORBIJ"
+    {DIE, TIJD, IS2, VOORBIJ, 255, 255, 255},    // "DIE TIJD IS VOORBIJ"
     {DE, TIJD, VLIEGT, 255, 255, 255, 255},      // "DE TIJD VLIEGT"
-    {DE, TIJD, VLIEGT, 255, 255, 255, 255}       // "DE TIJD VLIEGT"
+    {DE, TIJD, VLIEGT, 255, 255, 255, 255},      // "DE TIJD VLIEGT"
+    {ER, IS, EEN, TIJD, VAN, KOMEN, 255},        // "ER IS EEN TIJD VAN KOMEN"
+    {EN, EEN, TIJD, VAN, GAAN, 255, 255}         // "EN EEN TIJD VAN GAAN"
 };
 
 // Word to letter location lookup table

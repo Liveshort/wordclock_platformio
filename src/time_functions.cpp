@@ -79,11 +79,11 @@ bool update_time() {
         // To prevent a sudden reset while fading out, only update minute dots when not fading out
         if (!FLAGS[FADING_OUT]) {
             int curr_min_mod = timeinfo.tm_min % 5;
-            for (int i = 0; i <= curr_min_mod; ++i)
+            for (int i = 0; i < curr_min_mod; ++i)
                 MINUTE_DOTS[i] = 255;
-            for (int i = curr_min_mod + 1; i < 5; ++i)
+            for (int i = curr_min_mod; i < 5; ++i)
                 MINUTE_DOTS[i] = 0;
-            MINUTE_DOTS[curr_min_mod + 1] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
+            MINUTE_DOTS[curr_min_mod] = (uint8_t) (timeinfo.tm_sec * 255 / 60);
         }
     } else {
         if (timeinfo.tm_sec >= 30)

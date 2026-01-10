@@ -21,6 +21,7 @@ byte MINUTE_DOTS[5];
 byte DRAWING_BOARD_LEDS[174];
 byte DRAWING_BOARD_COLORS[174][3];  // RGB colors for each LED
 int LIGHT_SENSOR_VALUES[2][10];
+int RANDOM_SAYING_INDEX;
 Logger LOGGER;
 Storage STORAGE;
 WCNetworkManager NETWORK_MANAGER;
@@ -89,7 +90,9 @@ void initialize_globals_and_workers() {
 
     // Default settings
     USER_SETTINGS[ROUND_DOWN_TIME] = 1;
-    USER_SETTINGS[SAYING_INTERVAL_S] = 280;
+    USER_SETTINGS[SAYING_INTERVAL_S] = 40;
+    USER_SETTINGS[SAYING_DURATION_S] = 15;
+    USER_SETTINGS[FADE_CYCLE_S] = 4;
 }
 
 void setup() {
@@ -253,16 +256,39 @@ void loop() {
 
                         // If the sayings timer has expired, show a saying
                         if (!FLAGS[TRANSITIONING] &&
-                            (millis() - TIMERS[SAYING_INTERVAL_TIMER] > USER_SETTINGS[SAYING_INTERVAL_S])) {
+                            (millis() - TIMERS[SAYING_INTERVAL_TIMER] > USER_SETTINGS[SAYING_INTERVAL_S] * 1000)) {
                             TIMERS[SAYING_INTERVAL_TIMER] = millis();
+                            int half_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 2;
+                            TIMERS[RANDOM_SAYING_TIMER] = millis() + half_fade_offset_ms;
                             NEXT_NO_SUBSTATE = SUBSTATE_SHOW_SAYING;
+                            RANDOM_SAYING_INDEX =
+                                random(0, 20);  // There are 11 sayings, every one is duplicated, some have 2 variants.
+                                                // The 11th saying has two pieces that are displayed after another.
+                            FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
                             trigger_slow_transition();
                         }
 
                         LED_CONTROLLER.show_time();
                         break;
                     case SUBSTATE_SHOW_SAYING:
+                        if (!TRANSITIONING)
+                            FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
 
+                        // After showing the saying for 10 seconds, return to showing the time
+                        if (RANDOM_SAYING_INDEX != 20 && !FLAGS[TRANSITIONING] &&
+                            (millis() - TIMERS[RANDOM_SAYING_TIMER] > USER_SETTINGS[SAYING_DURATION_S] * 1000)) {
+                            NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                            trigger_slow_transition();
+                        } else if (RANDOM_SAYING_INDEX == 20 && !FLAGS[TRANSITIONING] &&
+                                   (millis() - TIMERS[RANDOM_SAYING_TIMER] >
+                                    (USER_SETTINGS[SAYING_DURATION_S] * 1000) / 2)) {
+                            FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = true;
+                            // The index is set to 21 in the safe state change handler after the state change is
+                            // triggered
+                            trigger_slow_transition();
+                        }
+
+                        LED_CONTROLLER.show_saying(RANDOM_SAYING_INDEX);
                         break;
                 }
                 break;
@@ -298,6 +324,10 @@ void loop() {
             CURR_STATE = NEXT_STATE;
             CURR_NO_SUBSTATE = NEXT_NO_SUBSTATE;
             FLAGS[TRIGGER_STATE_CHANGE] = false;
+
+            // Special handling for the two part saying
+            if (FLAGS[TWO_PART_SAYING_GO_TO_PART_2])
+                RANDOM_SAYING_INDEX = 21;
         }
     }
 
