@@ -5,7 +5,7 @@
 #include "main.h"
 
 #define LED_PIN 13
-#define BRIGHTNESS 128
+#define BRIGHTNESS 255
 #define LED_TYPE WS2812
 #define COLOR_ORDER GRB
 #define ANIMATION_FPS 60
@@ -254,7 +254,6 @@ void LEDController::show_saying(int saying_index) {
 
     // The minute dots should start all bright and slowly fade one by one to off from right to left
     // First calculate the permyriads (0 to 10000) of the saying duration that has passed
-    // TODO: Replace the 1000 ms at the end with half the transition time user setting when that is implemented
     int quarter_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 4;
     int bips_elapsed = 10000 * ((long) (millis() - TIMERS[RANDOM_SAYING_TIMER]) - quarter_fade_offset_ms) /
                        (USER_SETTINGS[SAYING_DURATION_S] * 1000);

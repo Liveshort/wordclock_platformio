@@ -88,11 +88,13 @@ void initialize_globals_and_workers() {
 
     initialize_buttons();
 
-    // Default settings
-    USER_SETTINGS[ROUND_DOWN_TIME] = 1;
-    USER_SETTINGS[SAYING_INTERVAL_S] = 40;
-    USER_SETTINGS[SAYING_DURATION_S] = 15;
-    USER_SETTINGS[FADE_CYCLE_S] = 4;
+    // Check and load user settings
+    if (STORAGE.check_user_settings_saved()) {
+        STORAGE.load_user_settings();
+    } else {
+        STORAGE.default_user_settings();
+        STORAGE.load_user_settings();
+    }
 }
 
 void setup() {
