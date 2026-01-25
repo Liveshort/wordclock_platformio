@@ -71,6 +71,7 @@ enum USER_SETTINGS {
     ROUND_DOWN_TIME,  // Setting this to 0 will make 12:27:30 -> 12:30 and 12:32:29 -> 12:30. Any other value will make
                       // the time always round down in increments of 5 minutes, i.e. 12:29:59 -> 12:25. This settings
                       // also influences the behavior of the minute dots.
+    SAYINGS_ENABLED,  // Enables or disables sayings.
     SAYING_INTERVAL_S,  // Determines the interval at which sayings occur in seconds.
     SAYING_DURATION_S,  // Determines how long a saying is displayed in seconds.
     FADE_CYCLE_S,       // Duration of fade in/out cycles in seconds.

@@ -58,7 +58,7 @@ class CaptiveRequestHandler : public AsyncWebHandler {
     void handleRequest(AsyncWebServerRequest* request) {
         if (!request->authenticate(http_user, http_pass))
             return request->requestAuthentication();
-        request->send_P(200, "text/html", index_html);
+        request->send(200, "text/html", index_html);
     }
 };
 
@@ -90,25 +90,31 @@ void WCNetworkManager::setup_server() {
     server.on("/", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (http_login_enabled && !request->authenticate(http_user, http_pass))
             return request->requestAuthentication();
-        request->send_P(200, "text/html", index_html);
+        request->send(200, "text/html", index_html);
     });
 
     server.on("/wifi_settings", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (http_login_enabled && !request->authenticate(http_user, http_pass))
             return request->requestAuthentication();
-        request->send_P(200, "text/html", wifi_html);
+        request->send(200, "text/html", wifi_html);
+    });
+
+    server.on("/settings", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+        request->send(200, "text/html", settings_html);
     });
 
     server.on("/log_page", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (http_login_enabled && !request->authenticate(http_user, http_pass))
             return request->requestAuthentication();
-        request->send_P(200, "text/html", log_html);
+        request->send(200, "text/html", log_html);
     });
 
     server.on("/drawing_board", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (http_login_enabled && !request->authenticate(http_user, http_pass))
             return request->requestAuthentication();
-        request->send_P(200, "text/html", drawing_board_html);
+        request->send(200, "text/html", drawing_board_html);
         // Request drawing board mode (handled in main.cpp)
         FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = true;
     });
@@ -244,6 +250,69 @@ void WCNetworkManager::setup_server() {
                       last_time_sync_string + "\"}";
 
         request->send(200, "application/json", json);
+    });
+
+    server.on("/get_settings", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+
+        String json = "{\"round_down_time\": " + String(USER_SETTINGS[ROUND_DOWN_TIME]) +
+                      ", \"sayings_enabled\": " + String(USER_SETTINGS[SAYINGS_ENABLED]) +
+                      ", \"saying_interval_s\": " + String(USER_SETTINGS[SAYING_INTERVAL_S]) +
+                      ", \"saying_duration_s\": " + String(USER_SETTINGS[SAYING_DURATION_S]) +
+                      ", \"fade_cycle_s\": " + String(USER_SETTINGS[FADE_CYCLE_S]) + "}";
+
+        request->send(200, "application/json", json);
+    });
+
+    server.on("/set_setting", HTTP_POST, [this](AsyncWebServerRequest* request) {
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+
+        if (request->hasParam("setting", true) && request->hasParam("value", true)) {
+            int setting = request->getParam("setting", true)->value().toInt();
+            int value = request->getParam("value", true)->value().toInt();
+
+            if (setting >= 0 && setting < SETTINGS_COUNT) {
+                // Do some basic bounds checking
+                if (setting == ROUND_DOWN_TIME) {
+                    if (value < 0)
+                        value = 0;
+                    else if (value > 1)
+                        value = 1;
+                } else if (setting == SAYINGS_ENABLED) {
+                    if (value < 0)
+                        value = 0;
+                    else if (value > 1)
+                        value = 1;
+                } else if (setting == SAYING_INTERVAL_S) {
+                    if (value < 40)
+                        value = 40;
+                    else if (value > 10800)
+                        value = 10800;
+                } else if (setting == SAYING_DURATION_S) {
+                    if (value < 5)
+                        value = 5;
+                    else if (value > 30)
+                        value = 30;
+                } else if (setting == FADE_CYCLE_S) {
+                    if (value < 0)
+                        value = 0;
+                    else if (value > 8)
+                        value = 8;
+                }
+
+                // Save the setting
+                USER_SETTINGS[setting] = value;
+                STORAGE.save_user_settings();
+                LOGGER.println("Setting " + String(setting) + " updated to " + String(value));
+                request->send(200, "text/plain", "OK");
+            } else {
+                request->send(400, "text/plain", "Invalid setting");
+            }
+        } else {
+            request->send(400, "text/plain", "Missing parameters");
+        }
     });
 
     server.on("/log_short", HTTP_GET, [this](AsyncWebServerRequest* request) {

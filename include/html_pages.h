@@ -151,7 +151,8 @@ const char index_html[] PROGMEM = R"rawliteral(
             </tr>
         </table>
     </div>
-    <button onclick="window.location.href='/wifi_settings'">Netwerkinstellingen</button>
+    <button onclick="window.location.href='/wifi_settings'">Netwerk</button>
+    <button onclick="window.location.href='/settings'">Instellingen</button>
     <button onclick="window.location.href='/drawing_board'">Tekenbord</button>
     <h2>Thema's</h2>
     <label><input type="checkbox" value="Geel" onchange="sendCheckbox(this)"> Geel</label><br>
@@ -327,6 +328,224 @@ const char wifi_html[] PROGMEM = R"rawliteral(
             <button type="submit">Verbinden</button>
         </form>
     </div>
+</body>
+</html>
+)rawliteral";
+
+const char settings_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WoordKlok - Netwerk</title>
+    <meta name="viewport" content="width=device-width">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            background-color: #2c3e50;
+            color: white;
+            margin: 0;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        h2 {
+            background-color: #2c3e50;
+            color: white;
+            margin: 0;
+            padding: 15px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .form-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .form-group label {
+            width: 120px;
+            text-align: right;
+            margin-right: 10px;
+        }
+        .form-group select,
+        .form-group input {
+            width: 300px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            height: 38px;
+            font-size: 16px;
+            color: #000000;
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+        button:hover {
+            background-color: #005f73;
+        }
+    </style>
+    <script>
+        // send a single setting to the server
+        function sendSetting(setting, value) {
+            const valToSend = Number(value);
+            fetch("/set_setting", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "setting=" + setting + "&value=" + encodeURIComponent(valToSend)
+            }).then(response => {
+                if (!response.ok) {
+                    console.error("Failed to set setting", setting);
+                } else {
+                    console.log("Setting", setting, "set to", valToSend);
+                    loadSettings();
+                }
+            }).catch(err => console.error(err));
+        }
+
+        // try to load current values from the server on load
+        window.addEventListener('load', function() {
+            loadSettings();
+        });
+
+        function loadSettings() {
+            fetch("/get_settings").then(r => r.json()).then(data => {
+                if (data && data.round_down_time !== undefined) {
+                    const sel = document.getElementById("select_round_down_time");
+                    if (sel) sel.value = data.round_down_time ? "1" : "0";
+                }
+                if (data && data.sayings_enabled !== undefined) {
+                    const s = document.getElementById("select_sayings_enabled");
+                    if (s) s.value = data.sayings_enabled ? "1" : "0";
+                }
+                if (data && data.saying_interval_s !== undefined) {
+                    const iv = document.getElementById("input_saying_interval_s");
+                    if (iv) iv.value = String(data.saying_interval_s);
+                }
+                if (data && data.saying_duration_s !== undefined) {
+                    const dv = document.getElementById("input_saying_duration_s");
+                    if (dv) dv.value = String(data.saying_duration_s);
+                }
+                if (data && data.fade_cycle_s !== undefined) {
+                    const fc = document.getElementById("select_fade_cycle_s");
+                    if (fc) fc.value = String(data.fade_cycle_s);
+                }
+            }).catch(err => console.error(err));
+        }
+    </script>
+</head>
+<body>
+    <h1>WoordKlok - Instellingen</h1>
+    <div style="display: flex; justify-content: center;">
+        <table style="border-collapse: collapse; margin: 10px; background-color: #eef2f5;">
+            <tr style="background-color: #54718f;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: white;">Tijdweergave</td>
+                <td style="text-align: left; padding: 10px;" id="option_round_down_time">
+                    <select id="select_round_down_time" onchange="sendSetting(0, this.value)">
+                        <option value="0">13:33 -> 13:35</option>
+                        <option value="1">13:33 -> 13:30</option>
+                    </select>
+                </td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: black;">Gezegden</td>
+                <td style="text-align: left; padding: 10px;" id="option_sayings_enabled">
+                    <select id="select_sayings_enabled" onchange="sendSetting(1, this.value)">
+                        <option value="0">Geen gezegden</option>
+                        <option value="1">Wel gezegden</option>
+                    </select>
+                </td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: white;">Gezegden interval</td>
+                <td style="text-align: left; padding: 0px;" id="option_saying_interval_s">
+                    <input type="number" id="input_saying_interval_s" min="40" max="10800"
+                           onchange=""
+                           onblur="sendSetting(2, this.value)"
+                           onkeydown="if (event.key === 'Enter') { this.blur(); }"
+                           style="width:100px; padding:0px;" />
+                </td>
+            </tr>
+            <tr style="background-color: #f5f9fc">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: black;">Gezegden duur</td>
+                <td style="text-align: left; padding: 0px;" id="option_saying_duration_s">
+                    <input type="number" id="input_saying_duration_s" min="5" max="30"
+                           onchange=""
+                           onblur="sendSetting(3, this.value)"
+                           onkeydown="if (event.key === 'Enter') { this.blur(); }"
+                           style="width:100px; padding:0px;" />
+                </td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: white;">Fade in/out duur</td>
+                <td style="text-align: left; padding: 10px;" id="option_fade_cycle_s">
+                    <select id="select_fade_cycle_s" onchange="sendSetting(4, this.value)">
+                        <option value="0">0 seconden</option>
+                        <option value="1">1 seconde</option>
+                        <option value="2">2 seconden</option>
+                        <option value="4">4 seconden</option>
+                        <option value="8">8 seconden</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <h2>Legenda</h2>
+    <div style="display: flex; justify-content: center; max-width: 600px; margin: auto;">
+        <table style="border-collapse: collapse; margin: 10px; background-color: #eef2f5;">
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Tijdweergave</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Als "13:33 -> 13:35", dan wordt de tijd afgerond naar het dichtsbijzijnde vijftal. Als "13:33 -> 13:30", dan wordt de tijd altijd naar beneden afgerond. De minuut-lampjes onderaan de klok geven de verstreken tijd tussen de vijf-minuutintervallen aan.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Gezegden</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Bepaalt of er met vaste intervallen gezegden worden weergegeven of niet.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Gezegden interval</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Tijd tussen gezegden in seconden. Minimaal 40 seconden, maximaal 10800 seconden (3 uur).</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Gezegden duur</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Weergavetijd gezegden in seconden. Minimaal 5 seconden, maximaal 30 seconden.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Fade in/out duur</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Duur fade in/out in seconden. De duur geeft de totale tijd van een out & in cyclus aan. Minimaal 0 seconden (geen fade), maximaal 8 seconden.</td>
+            </tr>
+        </table>
+    </div>
+    <button onclick="window.location.href='/'">Terug naar hoofdmenu</button>
 </body>
 </html>
 )rawliteral";

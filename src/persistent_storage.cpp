@@ -19,6 +19,7 @@ bool Storage::check_user_settings_saved() {
 
 void Storage::save_user_settings() {
     PREFS.putInt("setting_rdt", USER_SETTINGS[ROUND_DOWN_TIME]);
+    PREFS.putInt("setting_sen", USER_SETTINGS[SAYINGS_ENABLED]);
     PREFS.putInt("setting_sis", USER_SETTINGS[SAYING_INTERVAL_S]);
     PREFS.putInt("setting_sds", USER_SETTINGS[SAYING_DURATION_S]);
     PREFS.putInt("setting_fcs", USER_SETTINGS[FADE_CYCLE_S]);
@@ -26,6 +27,7 @@ void Storage::save_user_settings() {
 
 void Storage::load_user_settings() {
     USER_SETTINGS[ROUND_DOWN_TIME] = PREFS.getInt("setting_rdt");
+    USER_SETTINGS[SAYINGS_ENABLED] = PREFS.getInt("setting_sen");
     USER_SETTINGS[SAYING_INTERVAL_S] = PREFS.getInt("setting_sis");
     USER_SETTINGS[SAYING_DURATION_S] = PREFS.getInt("setting_sds");
     USER_SETTINGS[FADE_CYCLE_S] = PREFS.getInt("setting_fcs");
@@ -35,15 +37,21 @@ void Storage::load_user_settings() {
     // String log_line = "  ROUND_DOWN_TIME: " + std::to_string(USER_SETTINGS[ROUND_DOWN_TIME]) + "\n";
     // LOGGER.print(log_line);
 
-    LOGGER.println("Gebruikersinstellingen geladen:");
-    LOGGER.println("  ROUND_DOWN_TIME: " + String(USER_SETTINGS[ROUND_DOWN_TIME]));
-    LOGGER.println("  SAYING_INTERVAL_S: " + String(USER_SETTINGS[SAYING_INTERVAL_S]));
-    LOGGER.println("  SAYING_DURATION_S: " + String(USER_SETTINGS[SAYING_DURATION_S]));
-    LOGGER.println("  FADE_CYCLE_S: " + String(USER_SETTINGS[FADE_CYCLE_S]));
+    LOGGER.print("Gebruikersinstellingen geladen: ");
+    LOGGER.print(String(USER_SETTINGS[ROUND_DOWN_TIME]));
+    LOGGER.print(", ");
+    LOGGER.print(String(USER_SETTINGS[SAYINGS_ENABLED]));
+    LOGGER.print(", ");
+    LOGGER.print(String(USER_SETTINGS[SAYING_INTERVAL_S]));
+    LOGGER.print(", ");
+    LOGGER.print(String(USER_SETTINGS[SAYING_DURATION_S]));
+    LOGGER.print(", ");
+    LOGGER.println(String(USER_SETTINGS[FADE_CYCLE_S]));
 }
 
 void Storage::default_user_settings() {
     PREFS.putInt("setting_rdt", 1);
+    PREFS.putInt("setting_sen", 1);
     PREFS.putInt("setting_sis", 40);
     PREFS.putInt("setting_sds", 15);
     PREFS.putInt("setting_fcs", 4);

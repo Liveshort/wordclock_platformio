@@ -21,8 +21,18 @@ CRGB leds_physical[NUM_LEDS_PHYSICAL];
 CRGB leds_logical[NUM_LEDS_LOGICAL];
 
 void fade_out(bool skip_minute_dots = false) {
-    static int8_t direction = 255 / (ANIMATION_FPS * USER_SETTINGS[FADE_CYCLE_S] / 2);
-    static int8_t step = direction;
+    // Instant fade out if duration is set to 0
+    if (USER_SETTINGS[FADE_CYCLE_S] == 0) {
+        ANIMATION_STATES[BLOCKING_FADE] = 0;
+        FLAGS[FADING_OUT] = false;
+        FLAGS[FADING_IN] = true;
+        FLAGS[TRIGGER_STATE_CHANGE] = true;
+
+        return;
+    }
+
+    int8_t direction = 255 / (ANIMATION_FPS * USER_SETTINGS[FADE_CYCLE_S] / 2);
+    int8_t step = direction;
 
     ANIMATION_STATES[BLOCKING_FADE] -= direction;
     if (ANIMATION_STATES[BLOCKING_FADE] < step) {
@@ -40,8 +50,17 @@ void fade_out(bool skip_minute_dots = false) {
 }
 
 void fade_in(bool skip_minute_dots = false) {
-    static int8_t direction = 255 / (ANIMATION_FPS * USER_SETTINGS[FADE_CYCLE_S] / 2);
-    static int8_t step = direction;
+    // Instant fade in if duration is set to 0
+    if (USER_SETTINGS[FADE_CYCLE_S] == 0) {
+        ANIMATION_STATES[BLOCKING_FADE] = 255;
+        FLAGS[FADING_IN] = false;
+        FLAGS[TRANSITIONING] = false;
+
+        return;
+    }
+
+    int8_t direction = 255 / (ANIMATION_FPS * USER_SETTINGS[FADE_CYCLE_S] / 2);
+    int8_t step = direction;
 
     ANIMATION_STATES[BLOCKING_FADE] += direction;
     if (ANIMATION_STATES[BLOCKING_FADE] > 255 - step) {
@@ -58,8 +77,15 @@ void fade_in(bool skip_minute_dots = false) {
 }
 
 void crossfade() {
-    static int8_t direction = 255 / (ANIMATION_FPS * CROSSFADE_LENGTH_MS / 1000);
-    static int8_t step = direction;
+    // Instant crossfade if regular fade cycle duration is set to 0
+    if (USER_SETTINGS[FADE_CYCLE_S] == 0) {
+        ANIMATION_STATES[CROSSFADE] = 255;
+        FLAGS[CROSSFADING] = false;
+        FLAGS[TRANSITIONING] = false;
+    }
+
+    int8_t direction = 255 / (ANIMATION_FPS * CROSSFADE_LENGTH_MS / 1000);
+    int8_t step = direction;
 
     ANIMATION_STATES[CROSSFADE] += direction;
     if (ANIMATION_STATES[CROSSFADE] > 255 - step) {
@@ -85,8 +111,8 @@ void LEDController::save_current_state() {
 }
 
 void LEDController::overlay_AP_active(bool ap_active) {
-    static int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
-    static int8_t step = direction;
+    int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
+    int8_t step = direction;
 
     if (!ap_active)
         direction = -abs(direction);
@@ -106,8 +132,8 @@ void LEDController::overlay_AP_active(bool ap_active) {
 }
 
 void LEDController::waiting_for_wifi_breathing_animation() {
-    static int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
-    static int8_t step = direction;
+    int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
+    int8_t step = direction;
 
     // Clear all LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
@@ -128,8 +154,8 @@ void LEDController::waiting_for_wifi_failed() {
 }
 
 void LEDController::wifi_connected_blink() {
-    static int8_t direction = 255 / (ANIMATION_FPS * 1 / 2);
-    static int8_t step = direction;
+    int8_t direction = 255 / (ANIMATION_FPS * 1 / 2);
+    int8_t step = direction;
 
     // Clear all LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
@@ -146,8 +172,8 @@ void LEDController::wifi_connected_blink() {
 }
 
 void LEDController::waiting_for_time_breathing_animation() {
-    static int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
-    static int8_t step = direction;
+    int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
+    int8_t step = direction;
 
     // Clear all LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
@@ -167,8 +193,8 @@ void LEDController::waiting_for_time_breathing_animation() {
 }
 
 void LEDController::time_synced_blink() {
-    static int8_t direction = 255 / (ANIMATION_FPS * 1 / 2);
-    static int8_t step = direction;
+    int8_t direction = 255 / (ANIMATION_FPS * 1 / 2);
+    int8_t step = direction;
 
     // Clear all LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++)

@@ -88,6 +88,9 @@ void initialize_globals_and_workers() {
 
     initialize_buttons();
 
+    // Temporary: set default user settings, we are adding more settings later
+    STORAGE.default_user_settings();
+
     // Check and load user settings
     if (STORAGE.check_user_settings_saved()) {
         STORAGE.load_user_settings();
@@ -295,6 +298,12 @@ void loop() {
                 }
                 break;
             case DRAWING_BOARD:
+                // Check if the flag has been unset, so we can return to normal operation
+                if (!FLAGS[SERVER_REQUESTS_DRAWING_BOARD]) {
+                    LOGGER.println("Exiting drawing board mode - returning to normal operation");
+                    return_to_normal_operation();
+                }
+
                 // Check for timeout (return to normal after 5 minutes of inactivity)
                 if (millis() - TIMERS[DRAWING_BOARD_TIMER] > 300000) {
                     LOGGER.println("Drawing board timeout - returning to normal operation");
