@@ -72,9 +72,12 @@ enum USER_SETTINGS {
                       // the time always round down in increments of 5 minutes, i.e. 12:29:59 -> 12:25. This settings
                       // also influences the behavior of the minute dots.
     SAYINGS_ENABLED,  // Enables or disables sayings.
-    SAYING_INTERVAL_S,  // Determines the interval at which sayings occur in seconds.
-    SAYING_DURATION_S,  // Determines how long a saying is displayed in seconds.
-    FADE_CYCLE_S,       // Duration of fade in/out cycles in seconds.
+    SAYING_INTERVAL_S,   // Determines the interval at which sayings occur in seconds.
+    SAYING_DURATION_S,   // Determines how long a saying is displayed in seconds.
+    FADE_CYCLE_S,        // Duration of fade in/out cycles in seconds.
+    ACTIVE_PALETTES,     // Bitmask of active palettes
+    PALETTE_INTERVAL_S,  // Interval to change palette in seconds
+    PALETTE_CYCLE_S,     // Cycle speed for return to start of palette in seconds
     SETTINGS_COUNT
 };
 extern int USER_SETTINGS[];

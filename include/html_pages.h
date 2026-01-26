@@ -450,6 +450,14 @@ const char settings_html[] PROGMEM = R"rawliteral(
                     const fc = document.getElementById("select_fade_cycle_s");
                     if (fc) fc.value = String(data.fade_cycle_s);
                 }
+                if (data && data.palette_interval_s !== undefined) {
+                    const pi = document.getElementById("input_palette_interval_s");
+                    if (pi) pi.value = String(data.palette_interval_s);
+                }
+                if (data && data.palette_cycle_s !== undefined) {
+                    const pc = document.getElementById("input_palette_cycle_s");
+                    if (pc) pc.value = String(data.palette_cycle_s);
+                }
             }).catch(err => console.error(err));
         }
     </script>
@@ -508,6 +516,26 @@ const char settings_html[] PROGMEM = R"rawliteral(
                     </select>
                 </td>
             </tr>
+            <tr style="background-color: #f5f9fc">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: black;">Kleurpalet interval</td>
+                <td style="text-align: left; padding: 0px;" id="option_palette_interval_s">
+                    <input type="number" id="input_palette_interval_s" min="300" max="604800"
+                           onchange=""
+                           onblur="sendSetting(6, this.value)"
+                           onkeydown="if (event.key === 'Enter') { this.blur(); }"
+                           style="width:100px; padding:0px;" />
+                </td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: white;">Kleurstroom duur</td>
+                <td style="text-align: left; padding: 0px;" id="option_palette_cycle_s">
+                    <input type="number" id="input_palette_cycle_s" min="5" max="3600"
+                           onchange=""
+                           onblur="sendSetting(7, this.value)"
+                           onkeydown="if (event.key === 'Enter') { this.blur(); }"
+                           style="width:100px; padding:0px;" />
+                </td>
+            </tr>
         </table>
     </div>
     <h2>Legenda</h2>
@@ -529,7 +557,7 @@ const char settings_html[] PROGMEM = R"rawliteral(
                 <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Gezegden interval</td>
             </tr>
             <tr style="background-color: #f5f9fc;">
-                <td style="text-align: left; padding: 10px; color: black;">Tijd tussen gezegden in seconden. Minimaal 40 seconden, maximaal 10800 seconden (3 uur).</td>
+                <td style="text-align: left; padding: 10px; color: black;">Tijd tussen gezegden in seconden. Minimaal 40 seconden, maximaal 3 uur.</td>
             </tr>
             <tr style="background-color: #54718f;">
                 <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Gezegden duur</td>
@@ -542,6 +570,18 @@ const char settings_html[] PROGMEM = R"rawliteral(
             </tr>
             <tr style="background-color: #f5f9fc;">
                 <td style="text-align: left; padding: 10px; color: black;">Duur fade in/out in seconden. De duur geeft de totale tijd van een out & in cyclus aan. Minimaal 0 seconden (geen fade), maximaal 8 seconden.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Kleurpalet interval</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Tijd tussen verschillende kleurenpaletten in seconden. Minimaal 5 minuten, maximaal 1 week.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Kleurstroom duur</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Duur van de kleurstroom in de paletten in seconden. Bepaalt de tijd die het duurt voordat het kleurenpalet helemaal rond is geweest. Minimaal 5 seconden, maximaal 1 uur.</td>
             </tr>
         </table>
     </div>

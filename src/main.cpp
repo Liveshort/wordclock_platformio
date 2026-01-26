@@ -167,6 +167,11 @@ void loop() {
         NETWORK_MANAGER.update();
         update_time();
         update_light_sensor_values();
+
+        // If sayings are disabled, keep resetting the sayings timer, so no sayings are shown
+        if (USER_SETTINGS[SAYINGS_ENABLED] == 0) {
+            TIMERS[SAYING_INTERVAL_TIMER] = millis();
+        }
     }
 
     // Check for button presses
@@ -279,7 +284,7 @@ void loop() {
                         if (!TRANSITIONING)
                             FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
 
-                        // After showing the saying for 10 seconds, return to showing the time
+                        // After showing the saying for <duration>, return to showing the time
                         if (RANDOM_SAYING_INDEX != 20 && !FLAGS[TRANSITIONING] &&
                             (millis() - TIMERS[RANDOM_SAYING_TIMER] > USER_SETTINGS[SAYING_DURATION_S] * 1000)) {
                             NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;

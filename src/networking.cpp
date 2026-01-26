@@ -260,7 +260,9 @@ void WCNetworkManager::setup_server() {
                       ", \"sayings_enabled\": " + String(USER_SETTINGS[SAYINGS_ENABLED]) +
                       ", \"saying_interval_s\": " + String(USER_SETTINGS[SAYING_INTERVAL_S]) +
                       ", \"saying_duration_s\": " + String(USER_SETTINGS[SAYING_DURATION_S]) +
-                      ", \"fade_cycle_s\": " + String(USER_SETTINGS[FADE_CYCLE_S]) + "}";
+                      ", \"fade_cycle_s\": " + String(USER_SETTINGS[FADE_CYCLE_S]) +
+                      ", \"palette_interval_s\": " + String(USER_SETTINGS[PALETTE_INTERVAL_S]) +
+                      ", \"palette_cycle_s\": " + String(USER_SETTINGS[PALETTE_CYCLE_S]) + "}";
 
         request->send(200, "application/json", json);
     });
@@ -300,6 +302,16 @@ void WCNetworkManager::setup_server() {
                         value = 0;
                     else if (value > 8)
                         value = 8;
+                } else if (setting == PALETTE_INTERVAL_S) {
+                    if (value < 300)
+                        value = 300;
+                    else if (value > 604800)
+                        value = 604800;
+                } else if (setting == PALETTE_CYCLE_S) {
+                    if (value < 5)
+                        value = 5;
+                    else if (value > 3600)
+                        value = 3600;
                 }
 
                 // Save the setting

@@ -16,9 +16,23 @@
 #define CROSSFADE_LENGTH_MS 300
 #define WIFI_LED_INDEX 168
 
+uint64_t frame_counter = 0;
+
 CRGB leds_source[NUM_LEDS_LOGICAL];
 CRGB leds_physical[NUM_LEDS_PHYSICAL];
 CRGB leds_logical[NUM_LEDS_LOGICAL];
+
+CRGBPalette16 palettes[8] = {RainbowColors_p,
+                             CloudColors_p,
+                             LavaColors_p,
+                             OceanColors_p,
+                             ForestColors_p,
+                             PartyColors_p,
+                             HeatColors_p,
+                             CRGBPalette16(CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White,
+                                           CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White,
+                                           CRGB::White, CRGB::White, CRGB::White, CRGB::White)};
+byte current_palette;
 
 void fade_out(bool skip_minute_dots = false) {
     // Instant fade out if duration is set to 0
@@ -98,9 +112,20 @@ void crossfade() {
     }
 }
 
+CRGB get_palette_row_color(byte led_index) {
+    // Calculate the palette index based on the frame count and LED index
+    int32_t frame_cycle_length = USER_SETTINGS[PALETTE_CYCLE_S] * ANIMATION_FPS;
+    // Calculate the palette index, adding a row offset based on the LED index
+    int32_t palette_index = ((frame_counter % frame_cycle_length) * 256 / frame_cycle_length + led_index / 13) % 256;
+
+    return ColorFromPalette(palettes[current_palette], palette_index);
+}
+
 void LEDController::initialize_led_controller() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds_physical, NUM_LEDS_PHYSICAL).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
+
+    current_palette = 0;
 }
 
 void LEDController::save_current_state() {
@@ -239,13 +264,13 @@ void LEDController::show_time() {
             if (led_index == 255)
                 break;
 
-            leds_logical[led_index] = CRGB::White;
+            leds_logical[led_index] = get_palette_row_color(led_index);
         }
     }
 
     // Light up the minute dots, blend based on how many minute dots are set
     for (int i = 0; i < 5; i++)
-        leds_logical[169 + i] = blend(CRGB::Black, CRGB::White, MINUTE_DOTS[i]);
+        leds_logical[169 + i] = blend(CRGB::Black, get_palette_row_color(169 + i), MINUTE_DOTS[i]);
 
     if (FLAGS[FADING_OUT])
         fade_out();
@@ -274,7 +299,7 @@ void LEDController::show_saying(int saying_index) {
             if (led_index == 255)
                 break;
 
-            leds_logical[led_index] = CRGB::White;
+            leds_logical[led_index] = get_palette_row_color(led_index);
         }
     }
 
@@ -293,10 +318,10 @@ void LEDController::show_saying(int saying_index) {
 
     for (int i = 0; i < 5; i++) {
         if (i < full_dots) {
-            leds_logical[169 + i] = CRGB::White;  // Fully on
+            leds_logical[169 + i] = get_palette_row_color(169 + i);  // Fully on
         } else if (i == full_dots) {
-            leds_logical[169 + i] =
-                blend(CRGB::Black, CRGB::White, partial_dot_permyriads * 255 / 2000);  // Partial brightness
+            leds_logical[169 + i] = blend(CRGB::Black, get_palette_row_color(169 + i),
+                                          partial_dot_permyriads * 255 / 2000);  // Partial brightness
         } else {
             leds_logical[169 + i] = CRGB::Black;  // Fully off
         }
@@ -328,6 +353,9 @@ void LEDController::show_drawing_board() {
 }
 
 void LEDController::update() {
+    // Increment frame counter
+    frame_counter++;
+
     // Map logical LED array to physical LEDs
     for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)
         leds_physical[i] = CRGB::Black;
