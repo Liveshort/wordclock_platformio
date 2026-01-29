@@ -3,6 +3,7 @@
 
 #include "led_control.h"
 #include "main.h"
+#include "palettes.h"
 
 #define LED_PIN 13
 #define BRIGHTNESS 255
@@ -17,22 +18,13 @@
 #define WIFI_LED_INDEX 168
 
 uint64_t frame_counter = 0;
+uint32_t reduced_frame_counter = 0;
 
 CRGB leds_source[NUM_LEDS_LOGICAL];
 CRGB leds_physical[NUM_LEDS_PHYSICAL];
 CRGB leds_logical[NUM_LEDS_LOGICAL];
 
-CRGBPalette16 palettes[8] = {RainbowColors_p,
-                             CloudColors_p,
-                             LavaColors_p,
-                             OceanColors_p,
-                             ForestColors_p,
-                             PartyColors_p,
-                             HeatColors_p,
-                             CRGBPalette16(CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White,
-                                           CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White, CRGB::White,
-                                           CRGB::White, CRGB::White, CRGB::White, CRGB::White)};
-byte current_palette;
+byte curr_palette_idx;
 
 void fade_out(bool skip_minute_dots = false) {
     // Instant fade out if duration is set to 0
@@ -113,19 +105,19 @@ void crossfade() {
 }
 
 CRGB get_palette_row_color(byte led_index) {
-    // Calculate the palette index based on the frame count and LED index
-    int32_t frame_cycle_length = USER_SETTINGS[PALETTE_CYCLE_S] * ANIMATION_FPS;
     // Calculate the palette index, adding a row offset based on the LED index
-    int32_t palette_index = ((frame_counter % frame_cycle_length) * 256 / frame_cycle_length + led_index / 13) % 256;
+    int32_t palette_index = reduced_frame_counter + USER_SETTINGS[PALETTE_ROW_SPACING] * LEDS_ROW[led_index];
+    if (palette_index > 255)
+        palette_index -= 256;
 
-    return ColorFromPalette(palettes[current_palette], palette_index);
+    return ColorFromPalette(PALETTES[curr_palette_idx].pal, palette_index);
 }
 
 void LEDController::initialize_led_controller() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds_physical, NUM_LEDS_PHYSICAL).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
 
-    current_palette = 0;
+    curr_palette_idx = 1;
 }
 
 void LEDController::save_current_state() {
@@ -355,6 +347,11 @@ void LEDController::show_drawing_board() {
 void LEDController::update() {
     // Increment frame counter
     frame_counter++;
+    reduced_frame_counter = (frame_counter % (USER_SETTINGS[PALETTE_CYCLE_S] * ANIMATION_FPS)) * 256 /
+                            (USER_SETTINGS[PALETTE_CYCLE_S] * ANIMATION_FPS);
+
+    if (frame_counter % 900 == 0)
+        curr_palette_idx = (curr_palette_idx + 1) % PALETTE_COUNT;
 
     // Map logical LED array to physical LEDs
     for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)
@@ -373,10 +370,26 @@ void LEDController::update() {
     left_light_average /= 10;
     right_light_average /= 10;
 
+    // Low values are light, high values are dark, so take the minimum of both sides
     int max_light_average = min(left_light_average, right_light_average);
 
+    // For fast calculation, assume a range of 2048 to actually apply fading.
+    // This 2048 is applied from the value that is assumed 'dark'.
+    // There is a cutoff for small light levels to avoid flickering when there is just a little bit of light.
+    // Above a certain value (dark value - 2048), just use full brightness.
+    int fade_amount;
+    if (max_light_average >= 4000) {
+        fade_amount = 255;
+    } else if (max_light_average >= 3072) {
+        fade_amount = 191;
+    } else if (max_light_average >= 1536) {
+        fade_amount = (max_light_average - 1536) / 8;
+    } else {
+        fade_amount = 0;
+    }
+
     for (int i = 0; i < NUM_LEDS_PHYSICAL; ++i)
-        leds_physical[i].fadeToBlackBy(max_light_average / 16);
+        leds_physical[i].fadeToBlackBy(fade_amount);
 
     // Apply gamma correction based on average light level, this makes the brightness levels appear more linear to the
     // human eye

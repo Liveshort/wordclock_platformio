@@ -60,7 +60,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             fetch("/checkbox", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "theme=" + checkbox.value + "&checked=" + (checkbox.checked ? "1" : "0")
+                body: "palette=" + checkbox.value + "&checked=" + (checkbox.checked ? "1" : "0")
             });
         }
         function sendCalibration(action) {
@@ -111,8 +111,70 @@ const char index_html[] PROGMEM = R"rawliteral(
                 });
             });
         }
+        function renderPaletteRow(p, idx) {
+            const tr = document.createElement('tr');
+            if (idx % 2 === 0) {
+                tr.style.backgroundColor = '#54718f';
+            } else {
+                tr.style.backgroundColor = '#f5f9fc';
+            }
+
+            const tdName = document.createElement('td');
+            tdName.textContent = p.name;
+            tdName.style.padding = '6px';
+            tdName.style.textAlign = 'left';
+            tdName.style.fontWeight = 'bold';
+            if (idx % 2 === 0) {
+                tdName.style.color = 'white';
+            } else {
+                tdName.style.color = 'black';
+            }
+            tr.appendChild(tdName);
+
+            const tdBox = document.createElement('td');
+            tdBox.style.padding = '6px';
+            const box = document.createElement('div');
+            box.style.display = 'grid';
+            box.style.gridTemplateColumns = 'repeat(16, 1fr)';
+            box.style.width = '240px';
+            box.style.height = '20px';
+            box.style.border = '1px solid #ccc';
+            box.style.overflow = 'hidden';
+            p.colors.forEach(col => {
+                const sw = document.createElement('div');
+                sw.style.backgroundColor = col;
+                sw.style.width = '100%';
+                sw.style.height = '100%';
+                box.appendChild(sw);
+            });
+            tdBox.appendChild(box);
+            tr.appendChild(tdBox);
+
+            const tdCheck = document.createElement('td');
+            tdCheck.style.padding = '6px';
+            tdCheck.style.textAlign = 'center';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = "pal-" + idx;
+            checkbox.value = idx;
+            checkbox.addEventListener('change', () => sendCheckbox(checkbox));
+            tdCheck.appendChild(checkbox);
+            tr.appendChild(tdCheck);
+
+            return tr;
+        }
+        function loadPalettes() {
+            fetch('/palettes').then(r => r.json()).then(list => {
+                const tbody = document.getElementById('palette-table-body');
+                tbody.innerHTML = '';
+                list.forEach((p, i) => {
+                    tbody.appendChild(renderPaletteRow(p, i));
+                });
+            }).catch(err => console.error(err));
+        }
 
         window.onload = function() {
+            loadPalettes();
             updateStatus();
             setInterval(updateStatus, 1000);
             updateLogShort();
@@ -152,12 +214,14 @@ const char index_html[] PROGMEM = R"rawliteral(
         </table>
     </div>
     <button onclick="window.location.href='/wifi_settings'">Netwerk</button>
-    <button onclick="window.location.href='/settings'">Instellingen</button>
+    <button onclick="window.location.href='/settings'">Weergave</button>
     <button onclick="window.location.href='/drawing_board'">Tekenbord</button>
     <h2>Thema's</h2>
-    <label><input type="checkbox" value="Geel" onchange="sendCheckbox(this)"> Geel</label><br>
-    <label><input type="checkbox" value="Blauw" onchange="sendCheckbox(this)"> Blauw</label><br>
-    <label><input type="checkbox" value="Wit" onchange="sendCheckbox(this)"> Wit</label><br>
+    <div style="display: flex; justify-content: center;">
+        <table style="max-width:600px; border-collapse:collapse; background-color: #eef2f5;">
+        <tbody id="palette-table-body"></tbody>
+        </table>
+    </div>
     <h2>Andere instellingen</h2>
     <button onclick="sendCalibration('dark')">Kalibreer donker</button>
     <button onclick="sendCalibration('light')">Kalibreer licht</button>
@@ -336,7 +400,7 @@ const char settings_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WoordKlok - Netwerk</title>
+    <title>WoordKlok - Weergave</title>
     <meta name="viewport" content="width=device-width">
     <style>
         body {
@@ -458,12 +522,16 @@ const char settings_html[] PROGMEM = R"rawliteral(
                     const pc = document.getElementById("input_palette_cycle_s");
                     if (pc) pc.value = String(data.palette_cycle_s);
                 }
+                if (data && data.palette_row_spacing !== undefined) {
+                    const rs = document.getElementById("select_palette_row_spacing");
+                    if (rs) rs.value = String(data.palette_row_spacing);
+                }
             }).catch(err => console.error(err));
         }
     </script>
 </head>
 <body>
-    <h1>WoordKlok - Instellingen</h1>
+    <h1>WoordKlok - Weergave</h1>
     <div style="display: flex; justify-content: center;">
         <table style="border-collapse: collapse; margin: 10px; background-color: #eef2f5;">
             <tr style="background-color: #54718f;">
@@ -536,6 +604,19 @@ const char settings_html[] PROGMEM = R"rawliteral(
                            style="width:100px; padding:0px;" />
                 </td>
             </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: black;">Kleurstroom variatie</td>
+                <td style="text-align: left; padding: 10px;" id="option_palette_row_spacing">
+                    <select id="select_palette_row_spacing" onchange="sendSetting(8, this.value)">
+                        <option value="0">Uit</option>
+                        <option value="1">Subtiel</option>
+                        <option value="2">Normaal</option>
+                        <option value="3">Aanwezig</option>
+                        <option value="4">Hoog</option>
+                        <option value="5">Extreem</option>
+                    </select>
+                </td>
+            </tr>
         </table>
     </div>
     <h2>Legenda</h2>
@@ -582,6 +663,12 @@ const char settings_html[] PROGMEM = R"rawliteral(
             </tr>
             <tr style="background-color: #f5f9fc;">
                 <td style="text-align: left; padding: 10px; color: black;">Duur van de kleurstroom in de paletten in seconden. Bepaalt de tijd die het duurt voordat het kleurenpalet helemaal rond is geweest. Minimaal 5 seconden, maximaal 1 uur.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Kleurstroom variatie</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Bepaalt hoeveel kleurvariatie tegelijk te zien is in de rijen van de klok.</td>
             </tr>
         </table>
     </div>

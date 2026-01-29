@@ -8,6 +8,7 @@
 #include "log.h"
 #include "main.h"
 #include "networking.h"
+#include "palettes.h"
 #include "persistent_storage.h"
 
 #define WIFI_SCAN_INTERVAL 10000          // milliseconds
@@ -262,7 +263,8 @@ void WCNetworkManager::setup_server() {
                       ", \"saying_duration_s\": " + String(USER_SETTINGS[SAYING_DURATION_S]) +
                       ", \"fade_cycle_s\": " + String(USER_SETTINGS[FADE_CYCLE_S]) +
                       ", \"palette_interval_s\": " + String(USER_SETTINGS[PALETTE_INTERVAL_S]) +
-                      ", \"palette_cycle_s\": " + String(USER_SETTINGS[PALETTE_CYCLE_S]) + "}";
+                      ", \"palette_cycle_s\": " + String(USER_SETTINGS[PALETTE_CYCLE_S]) +
+                      ", \"palette_row_spacing\": " + String(USER_SETTINGS[PALETTE_ROW_SPACING]) + "}";
 
         request->send(200, "application/json", json);
     });
@@ -312,6 +314,11 @@ void WCNetworkManager::setup_server() {
                         value = 5;
                     else if (value > 3600)
                         value = 3600;
+                } else if (setting == PALETTE_ROW_SPACING) {
+                    if (value < 0)
+                        value = 0;
+                    else if (value > 5)
+                        value = 5;
                 }
 
                 // Save the setting
@@ -325,6 +332,17 @@ void WCNetworkManager::setup_server() {
         } else {
             request->send(400, "text/plain", "Missing parameters");
         }
+    });
+
+    server.on("/palettes", HTTP_GET, [](AsyncWebServerRequest* request) {
+        String json = "[";
+        for (uint8_t i = 0; i < PALETTE_COUNT; ++i) {
+            json += palette_json_for(i);
+            if (i + 1 < PALETTE_COUNT)
+                json += ",";
+        }
+        json += "]";
+        request->send(200, "application/json", json);
     });
 
     server.on("/log_short", HTTP_GET, [this](AsyncWebServerRequest* request) {
@@ -441,10 +459,17 @@ void WCNetworkManager::setup_server() {
     server.on("/checkbox", HTTP_POST, [this](AsyncWebServerRequest* request) {
         if (http_login_enabled && !request->authenticate(http_user, http_pass))
             return request->requestAuthentication();
-        if (request->hasParam("theme", true) && request->hasParam("checked", true)) {
-            String theme = request->getParam("theme", true)->value();
+        if (request->hasParam("palette", true) && request->hasParam("checked", true)) {
+            String palette = request->getParam("palette", true)->value();
             String checked = request->getParam("checked", true)->value();
-            LOGGER.println("Theme " + theme + " is " + (checked == "1" ? "checked" : "unchecked"));
+            if (checked == "1")
+                USER_SETTINGS[ACTIVE_PALETTES] |= 1 << palette.toInt();
+            else
+                USER_SETTINGS[ACTIVE_PALETTES] &= ~(1 << palette.toInt());
+            STORAGE.save_user_settings();
+
+            LOGGER.println("Palette " + palette + " is nu " + (checked == "1" ? "actief" : "inactief"));
+            LOGGER.println("Huidige actieve palettes bitmask: " + String(USER_SETTINGS[ACTIVE_PALETTES]));
         }
         request->send(200, "text/plain", "Checkbox received");
     });

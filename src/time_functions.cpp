@@ -245,14 +245,14 @@ bool update_time() {
             break;
     }
 
-    for (int i = 0; i < 7; ++i) {
-        if (TARGET_TIME_WORDS[i] == 255)
-            continue;
+    // for (int i = 0; i < 7; ++i) {
+    //     if (TARGET_TIME_WORDS[i] == 255)
+    //         continue;
 
-        Serial.print(WORD_STRINGS[TARGET_TIME_WORDS[i]]);
-        Serial.print(" ");
-    }
-    Serial.println();
+    //     Serial.print(WORD_STRINGS[TARGET_TIME_WORDS[i]]);
+    //     Serial.print(" ");
+    // }
+    // Serial.println();
 
     return true;
 }
