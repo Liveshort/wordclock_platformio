@@ -26,6 +26,7 @@ enum FLAGS {
     TWO_PART_SAYING_GO_TO_PART_2,   // For the two part saying, go to part 2
     UPDATING_TIME_STRING,           // True if currently updating the time string
     SERVER_REQUESTS_DRAWING_BOARD,  // Server wants to enter drawing board mode
+    INTERRUPT_PALETTE_CYCLE,        // A button interrupt requested a palette cycle
     FLAG_COUNT
 };
 extern bool FLAGS[];
@@ -42,17 +43,18 @@ enum STRINGS {
 extern char* STRINGS[];
 
 enum TIMERS {
-    TIME_SYNC,              // Last time synchronization
-    TIME_UPDATE,            // Last time the time strings were updated
-    WIFI_SCAN,              // Last WiFi scan
-    WIFI_STATUS_UPDATE,     // Last WiFi status update
-    WIFI_CONNECT_ATTEMPT,   // Last WiFi connect attempt
-    WIFI_CONNECTED_T,       // Last time WiFi was connected
-    WIFI_CONNECT_FAILED,    // Last time WiFi connection failed
-    INTERRUPT_DEBOUNCE,     // Last time a button interrupt was handled
-    SAYING_INTERVAL_TIMER,  // Timer for automatic saying
-    RANDOM_SAYING_TIMER,    // Timer for random saying
-    DRAWING_BOARD_TIMER,    // Timer for drawing board activity
+    TIME_SYNC,               // Last time synchronization
+    TIME_UPDATE,             // Last time the time strings were updated
+    WIFI_SCAN,               // Last WiFi scan
+    WIFI_STATUS_UPDATE,      // Last WiFi status update
+    WIFI_CONNECT_ATTEMPT,    // Last WiFi connect attempt
+    WIFI_CONNECTED_T,        // Last time WiFi was connected
+    WIFI_CONNECT_FAILED,     // Last time WiFi connection failed
+    INTERRUPT_DEBOUNCE,      // Last time a button interrupt was handled
+    SAYING_INTERVAL_TIMER,   // Timer between automatic sayings
+    RANDOM_SAYING_TIMER,     // Display timer for an automatic saying
+    DRAWING_BOARD_TIMER,     // Timer for drawing board activity
+    PALETTE_INTERVAL_TIMER,  // Timer for palette cycling
     TIMER_COUNT
 };
 extern unsigned long TIMERS[];

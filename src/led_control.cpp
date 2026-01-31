@@ -24,7 +24,8 @@ CRGB leds_source[NUM_LEDS_LOGICAL];
 CRGB leds_physical[NUM_LEDS_PHYSICAL];
 CRGB leds_logical[NUM_LEDS_LOGICAL];
 
-byte curr_palette_idx;
+byte CURRENT_PALETTE_IDX;
+byte TARGET_PALETTE_IDX;
 
 void fade_out(bool skip_minute_dots = false) {
     // Instant fade out if duration is set to 0
@@ -110,14 +111,29 @@ CRGB get_palette_row_color(byte led_index) {
     if (palette_index > 255)
         palette_index -= 256;
 
-    return ColorFromPalette(PALETTES[curr_palette_idx].pal, palette_index);
+    return ColorFromPalette(PALETTES[CURRENT_PALETTE_IDX].pal, palette_index);
 }
 
 void LEDController::initialize_led_controller() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds_physical, NUM_LEDS_PHYSICAL).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
 
-    curr_palette_idx = 1;
+    // If no palettes are active, just show the white palette (index 0)
+    if (USER_SETTINGS[ACTIVE_PALETTES] == 0) {
+        TIMERS[PALETTE_INTERVAL_TIMER] = millis();
+        CURRENT_PALETTE_IDX = 0;
+        TARGET_PALETTE_IDX = 0;
+
+        return;
+    }
+
+    // If there are active palettes, set the target palette to the first active one
+    TARGET_PALETTE_IDX = 0;
+    while (!(USER_SETTINGS[ACTIVE_PALETTES] & (1 << TARGET_PALETTE_IDX))) {
+        TARGET_PALETTE_IDX = (TARGET_PALETTE_IDX + 1) % PALETTE_COUNT;
+    }
+
+    CURRENT_PALETTE_IDX = TARGET_PALETTE_IDX;
 }
 
 void LEDController::save_current_state() {
@@ -125,6 +141,61 @@ void LEDController::save_current_state() {
     for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
         leds_source[i] = leds_logical[i];
     }
+}
+
+void LEDController::check_cycle_themes() {
+    // If no palettes are active, just show the white palette (index 0)
+    if (USER_SETTINGS[ACTIVE_PALETTES] == 0) {
+        TIMERS[PALETTE_INTERVAL_TIMER] = millis();
+        CURRENT_PALETTE_IDX = 0;
+        TARGET_PALETTE_IDX = 0;
+
+        return;
+    }
+
+    // Cycle to the next active palette
+    if (millis() - TIMERS[PALETTE_INTERVAL_TIMER] > USER_SETTINGS[PALETTE_INTERVAL_S] * 1000) {
+        do {
+            TARGET_PALETTE_IDX = (TARGET_PALETTE_IDX + 1) % PALETTE_COUNT;
+        } while (!(USER_SETTINGS[ACTIVE_PALETTES] & (1 << TARGET_PALETTE_IDX)));
+
+        TIMERS[PALETTE_INTERVAL_TIMER] = millis();
+    }
+}
+
+int LEDController::cycle_theme_now() {
+    // If no palettes are active, just show the white palette (index 0)
+    if (USER_SETTINGS[ACTIVE_PALETTES] == 0) {
+        TIMERS[PALETTE_INTERVAL_TIMER] = millis();
+        TARGET_PALETTE_IDX = 0;
+
+        if (CURRENT_PALETTE_IDX != TARGET_PALETTE_IDX) {
+            FLAGS[INTERRUPT_PALETTE_CYCLE] = true;
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // Cycle to the next active palette
+    do {
+        TARGET_PALETTE_IDX = (TARGET_PALETTE_IDX + 1) % PALETTE_COUNT;
+    } while (!(USER_SETTINGS[ACTIVE_PALETTES] & (1 << TARGET_PALETTE_IDX)));
+
+    TIMERS[PALETTE_INTERVAL_TIMER] = millis();
+
+    // We want to cycle right now, so set the interrupt flag if the target palette is different from the current one
+    // Actual transition will be handled in the main loop
+    if (CURRENT_PALETTE_IDX != TARGET_PALETTE_IDX) {
+        FLAGS[INTERRUPT_PALETTE_CYCLE] = true;
+        return 1;
+    }
+
+    return 0;
+}
+
+void LEDController::set_current_theme_to_target() {
+    CURRENT_PALETTE_IDX = TARGET_PALETTE_IDX;
 }
 
 void LEDController::overlay_AP_active(bool ap_active) {
@@ -149,8 +220,8 @@ void LEDController::overlay_AP_active(bool ap_active) {
 }
 
 void LEDController::waiting_for_wifi_breathing_animation() {
-    int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
-    int8_t step = direction;
+    static int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
+    static int8_t step = direction;
 
     // Clear all LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
@@ -189,8 +260,8 @@ void LEDController::wifi_connected_blink() {
 }
 
 void LEDController::waiting_for_time_breathing_animation() {
-    int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
-    int8_t step = direction;
+    static int8_t direction = 255 / (ANIMATION_FPS * BREATHING_CYCLE_S / 2);
+    static int8_t step = direction;
 
     // Clear all LEDs
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++)
@@ -349,9 +420,6 @@ void LEDController::update() {
     frame_counter++;
     reduced_frame_counter = (frame_counter % (USER_SETTINGS[PALETTE_CYCLE_S] * ANIMATION_FPS)) * 256 /
                             (USER_SETTINGS[PALETTE_CYCLE_S] * ANIMATION_FPS);
-
-    if (frame_counter % 900 == 0)
-        curr_palette_idx = (curr_palette_idx + 1) % PALETTE_COUNT;
 
     // Map logical LED array to physical LEDs
     for (int i = 0; i < NUM_LEDS_PHYSICAL; i++)

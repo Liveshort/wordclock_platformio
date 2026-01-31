@@ -9,6 +9,9 @@ class LEDController {
    public:
     void initialize_led_controller();
     void save_current_state();
+    void check_cycle_themes();
+    int cycle_theme_now();
+    void set_current_theme_to_target();
     void overlay_AP_active(bool ap_active);
     void waiting_for_wifi_breathing_animation();
     void waiting_for_wifi_failed();

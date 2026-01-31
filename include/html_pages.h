@@ -61,7 +61,8 @@ const char index_html[] PROGMEM = R"rawliteral(
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: "palette=" + checkbox.value + "&checked=" + (checkbox.checked ? "1" : "0")
-            });
+            }).then(response => {
+                getCurrentAndTargetPalettes();});
         }
         function sendCalibration(action) {
             fetch("/calibrate", {
@@ -136,7 +137,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             const box = document.createElement('div');
             box.style.display = 'grid';
             box.style.gridTemplateColumns = 'repeat(16, 1fr)';
-            box.style.width = '240px';
+            box.style.width = '200px';
             box.style.height = '20px';
             box.style.border = '1px solid #ccc';
             box.style.overflow = 'hidden';
@@ -157,6 +158,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             checkbox.type = 'checkbox';
             checkbox.id = "pal-" + idx;
             checkbox.value = idx;
+            checkbox.checked = p.active;
             checkbox.addEventListener('change', () => sendCheckbox(checkbox));
             tdCheck.appendChild(checkbox);
             tr.appendChild(tdCheck);
@@ -172,12 +174,34 @@ const char index_html[] PROGMEM = R"rawliteral(
                 });
             }).catch(err => console.error(err));
         }
+        function updatePaletteCheckboxes() {
+            fetch('/palettes_active').then(r => r.json()).then(data => {
+                document.querySelectorAll('#palette-table-body input[type="checkbox"]').forEach(checkbox => {
+                    const idx = parseInt(checkbox.value);
+                    checkbox.checked = (data.active_palettes_bitmask & (1 << idx)) !== 0;
+                });
+            }).catch(err => console.error(err));
+        }
+        function getCurrentAndTargetPalettes() {
+            fetch('/palettes_active').then(r => r.json()).then(data => {
+                document.getElementById('current_palette_name').textContent = data.target_palette_name;
+            }).catch(err => console.error(err));
+        }
+        function cycleThemes() {
+            fetch('/cycle_theme_now', { method: 'POST' })
+                .then(() => {
+                    getCurrentAndTargetPalettes();
+                })
+                .catch(err => console.error(err));
+        }
 
         window.onload = function() {
             loadPalettes();
             updateStatus();
-            setInterval(updateStatus, 1000);
+            getCurrentAndTargetPalettes();
             updateLogShort();
+            setInterval(updateStatus, 1000);
+            setInterval(updatePaletteCheckboxes, 1000);
             setInterval(updateLogShort, 2500);
         }
     </script>
@@ -222,6 +246,11 @@ const char index_html[] PROGMEM = R"rawliteral(
         <tbody id="palette-table-body"></tbody>
         </table>
     </div>
+    <br>
+    <div style="display: flex; justify-content: center;">
+        Huidig thema:&nbsp;<span id="current_palette_name" style="font-weight: bold;">Laden...</span>
+    </div>
+    <button onclick="cycleThemes()">Volgende thema</button>
     <h2>Andere instellingen</h2>
     <button onclick="sendCalibration('dark')">Kalibreer donker</button>
     <button onclick="sendCalibration('light')">Kalibreer licht</button>

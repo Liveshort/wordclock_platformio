@@ -345,6 +345,26 @@ void WCNetworkManager::setup_server() {
         request->send(200, "application/json", json);
     });
 
+    server.on("/palettes_active", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        String json = "{\"active_palettes_bitmask\": " + String(USER_SETTINGS[ACTIVE_PALETTES]) +
+                      ", \"current_palette_idx\": " + String(CURRENT_PALETTE_IDX) +
+                      ", \"target_palette_idx\": " + String(TARGET_PALETTE_IDX) + ", \"current_palette_name\": \"" +
+                      PALETTES[CURRENT_PALETTE_IDX].name + "\", \"target_palette_name\": \"" +
+                      PALETTES[TARGET_PALETTE_IDX].name + "\"}";
+        request->send(200, "application/json", json);
+    });
+
+    server.on("/cycle_theme_now", HTTP_POST, [this](AsyncWebServerRequest* request) {
+        if (http_login_enabled && !request->authenticate(http_user, http_pass))
+            return request->requestAuthentication();
+
+        // Cycle to the next palette immediately
+        LED_CONTROLLER.cycle_theme_now();
+        LOGGER.println("Thema geupdate via webrequest naar index " + String(TARGET_PALETTE_IDX) + " (" +
+                       PALETTES[TARGET_PALETTE_IDX].name + ")");
+        request->send(200, "text/plain", "OK");
+    });
+
     server.on("/log_short", HTTP_GET, [this](AsyncWebServerRequest* request) {
         String json = "{\"timestamps\": [";
         String curr_line, next_line;
@@ -468,8 +488,16 @@ void WCNetworkManager::setup_server() {
                 USER_SETTINGS[ACTIVE_PALETTES] &= ~(1 << palette.toInt());
             STORAGE.save_user_settings();
 
-            LOGGER.println("Palette " + palette + " is nu " + (checked == "1" ? "actief" : "inactief"));
-            LOGGER.println("Huidige actieve palettes bitmask: " + String(USER_SETTINGS[ACTIVE_PALETTES]));
+            LOGGER.println("Thema " + palette + " (" + PALETTES[palette.toInt()].name + ") is nu " +
+                           (checked == "1" ? "actief" : "inactief"));
+            LOGGER.println("Bitmask huidige actieve thema's: " + String(USER_SETTINGS[ACTIVE_PALETTES]));
+
+            // If the target palette was disabled, cycle to the next active palette
+            if (palette.toInt() == CURRENT_PALETTE_IDX) {
+                LED_CONTROLLER.cycle_theme_now();
+            }
+            LOGGER.println("Huidig thema inactief, bijgewerkt naar index " + String(TARGET_PALETTE_IDX) + " (" +
+                           PALETTES[TARGET_PALETTE_IDX].name + ")");
         }
         request->send(200, "text/plain", "Checkbox received");
     });

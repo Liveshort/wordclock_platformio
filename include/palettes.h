@@ -23,6 +23,10 @@ struct PaletteInfo {
 extern const PaletteInfo PALETTES[];
 extern const uint8_t PALETTE_COUNT;
 
+// Define some globals
+extern byte CURRENT_PALETTE_IDX;
+extern byte TARGET_PALETTE_IDX;
+
 // function declaration
 String palette_json_for(uint8_t idx);
 

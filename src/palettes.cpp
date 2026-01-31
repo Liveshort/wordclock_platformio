@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "main.h"
 #include "palettes.h"
 
 DEFINE_GRADIENT_PALETTE(White_p){0,   255, 255, 255, 17,  255, 255, 255, 34,  255, 255, 255, 51,  255, 255, 255,
@@ -71,6 +72,10 @@ String palette_json_for(uint8_t idx) {
         if (i < 15)
             s += ",";
     }
-    s += "]}";
+    if (USER_SETTINGS[ACTIVE_PALETTES] & (1 << idx))
+        s += "],\"active\":true}";
+    else
+        s += "],\"active\":false}";
+
     return s;
 }
