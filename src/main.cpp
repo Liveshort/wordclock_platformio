@@ -6,6 +6,7 @@
 #include "log.h"
 #include "main.h"
 #include "networking.h"
+#include "palettes.h"
 #include "persistent_storage.h"
 #include "time_functions.h"
 
@@ -125,10 +126,10 @@ void trigger_fast_transition() {
     FLAGS[TRANSITIONING] = true;
     FLAGS[TRIGGER_STATE_CHANGE] = true;
     FLAGS[CROSSFADING] = true;
-    LED_CONTROLLER.save_current_state();
 
     FLAGS[FADING_IN] = false;
     FLAGS[FADING_OUT] = false;
+    ANIMATION_STATES[BLOCKING_FADE] = 255;
 }
 
 // A slow transition cannot interrupt a fast transition, so no need to reset flags here.
@@ -167,6 +168,11 @@ void loop() {
         NETWORK_MANAGER.update();
         update_time();
         update_light_sensor_values();
+
+        // If sayings are disabled, keep resetting the sayings timer, so no sayings are shown
+        if (USER_SETTINGS[SAYINGS_ENABLED] == 0) {
+            TIMERS[SAYING_INTERVAL_TIMER] = millis();
+        }
     }
 
     // Check for button presses
@@ -184,7 +190,9 @@ void loop() {
     }
     if (BUTTONS_PRESSED[BUTTON_THEMA]) {
         BUTTONS_PRESSED[BUTTON_THEMA] = false;
-        LOGGER.println("THEMA button pressed!");
+        LED_CONTROLLER.cycle_theme_now();
+        LOGGER.println("Thema geupdate via knop naar index " + String(TARGET_PALETTE_IDX) + " (" +
+                       PALETTES[TARGET_PALETTE_IDX].name + ")");
     }
     if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
         BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
@@ -194,10 +202,19 @@ void loop() {
     // Handle server-requested state changes
     if (FLAGS[SERVER_REQUESTS_DRAWING_BOARD] && CURR_STATE == NORMAL_OPERATION) {
         FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = false;
+        LED_CONTROLLER.save_current_state();
         NEXT_STATE = DRAWING_BOARD;
         trigger_fast_transition();
         TIMERS[DRAWING_BOARD_TIMER] = millis();
         LOGGER.println("Server requested drawing board mode");
+    }
+
+    // Handle palette cycle interrupt
+    if (FLAGS[INTERRUPT_PALETTE_CYCLE]) {
+        FLAGS[INTERRUPT_PALETTE_CYCLE] = false;
+        LED_CONTROLLER.save_current_state();
+        LED_CONTROLLER.set_current_theme_to_target();
+        trigger_fast_transition();
     }
 
     // Try to keep the LED updates at ~60 FPS
@@ -279,7 +296,7 @@ void loop() {
                         if (!TRANSITIONING)
                             FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
 
-                        // After showing the saying for 10 seconds, return to showing the time
+                        // After showing the saying for <duration>, return to showing the time
                         if (RANDOM_SAYING_INDEX != 20 && !FLAGS[TRANSITIONING] &&
                             (millis() - TIMERS[RANDOM_SAYING_TIMER] > USER_SETTINGS[SAYING_DURATION_S] * 1000)) {
                             NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;

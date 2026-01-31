@@ -26,6 +26,7 @@ enum FLAGS {
     TWO_PART_SAYING_GO_TO_PART_2,   // For the two part saying, go to part 2
     UPDATING_TIME_STRING,           // True if currently updating the time string
     SERVER_REQUESTS_DRAWING_BOARD,  // Server wants to enter drawing board mode
+    INTERRUPT_PALETTE_CYCLE,        // A button interrupt requested a palette cycle
     FLAG_COUNT
 };
 extern bool FLAGS[];
@@ -42,17 +43,18 @@ enum STRINGS {
 extern char* STRINGS[];
 
 enum TIMERS {
-    TIME_SYNC,              // Last time synchronization
-    TIME_UPDATE,            // Last time the time strings were updated
-    WIFI_SCAN,              // Last WiFi scan
-    WIFI_STATUS_UPDATE,     // Last WiFi status update
-    WIFI_CONNECT_ATTEMPT,   // Last WiFi connect attempt
-    WIFI_CONNECTED_T,       // Last time WiFi was connected
-    WIFI_CONNECT_FAILED,    // Last time WiFi connection failed
-    INTERRUPT_DEBOUNCE,     // Last time a button interrupt was handled
-    SAYING_INTERVAL_TIMER,  // Timer for automatic saying
-    RANDOM_SAYING_TIMER,    // Timer for random saying
-    DRAWING_BOARD_TIMER,    // Timer for drawing board activity
+    TIME_SYNC,               // Last time synchronization
+    TIME_UPDATE,             // Last time the time strings were updated
+    WIFI_SCAN,               // Last WiFi scan
+    WIFI_STATUS_UPDATE,      // Last WiFi status update
+    WIFI_CONNECT_ATTEMPT,    // Last WiFi connect attempt
+    WIFI_CONNECTED_T,        // Last time WiFi was connected
+    WIFI_CONNECT_FAILED,     // Last time WiFi connection failed
+    INTERRUPT_DEBOUNCE,      // Last time a button interrupt was handled
+    SAYING_INTERVAL_TIMER,   // Timer between automatic sayings
+    RANDOM_SAYING_TIMER,     // Display timer for an automatic saying
+    DRAWING_BOARD_TIMER,     // Timer for drawing board activity
+    PALETTE_INTERVAL_TIMER,  // Timer for palette cycling
     TIMER_COUNT
 };
 extern unsigned long TIMERS[];
@@ -72,9 +74,13 @@ enum USER_SETTINGS {
                       // the time always round down in increments of 5 minutes, i.e. 12:29:59 -> 12:25. This settings
                       // also influences the behavior of the minute dots.
     SAYINGS_ENABLED,  // Enables or disables sayings.
-    SAYING_INTERVAL_S,  // Determines the interval at which sayings occur in seconds.
-    SAYING_DURATION_S,  // Determines how long a saying is displayed in seconds.
-    FADE_CYCLE_S,       // Duration of fade in/out cycles in seconds.
+    SAYING_INTERVAL_S,    // Determines the interval at which sayings occur in seconds.
+    SAYING_DURATION_S,    // Determines how long a saying is displayed in seconds.
+    FADE_CYCLE_S,         // Duration of fade in/out cycles in seconds.
+    ACTIVE_PALETTES,      // Bitmask of active palettes
+    PALETTE_INTERVAL_S,   // Interval to change palette in seconds
+    PALETTE_CYCLE_S,      // Cycle speed for return to start of palette in seconds
+    PALETTE_ROW_SPACING,  // Spacing of palette rows (in LED rows)
     SETTINGS_COUNT
 };
 extern int USER_SETTINGS[];
