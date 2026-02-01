@@ -42,6 +42,7 @@ enum STRINGS {
 };
 extern char* STRINGS[];
 
+// Timers stored as millis() timestamps, can be compared with millis() to check elapsed time
 enum TIMERS {
     TIME_SYNC,               // Last time synchronization
     TIME_UPDATE,             // Last time the time strings were updated
@@ -51,10 +52,10 @@ enum TIMERS {
     WIFI_CONNECTED_T,        // Last time WiFi was connected
     WIFI_CONNECT_FAILED,     // Last time WiFi connection failed
     INTERRUPT_DEBOUNCE,      // Last time a button interrupt was handled
-    SAYING_INTERVAL_TIMER,   // Timer between automatic sayings
-    RANDOM_SAYING_TIMER,     // Display timer for an automatic saying
-    DRAWING_BOARD_TIMER,     // Timer for drawing board activity
-    PALETTE_INTERVAL_TIMER,  // Timer for palette cycling
+    SAYING_INTERVAL_TIMER,   // Last time an automatic saying was displayed
+    RANDOM_SAYING_TIMER,     // Time the currently displayed automatic saying started
+    DRAWING_BOARD_TIMER,     // Last time drawing board activity was detected
+    PALETTE_INTERVAL_TIMER,  // Last time the palette was changed
     TIMER_COUNT
 };
 extern unsigned long TIMERS[];
@@ -74,13 +75,15 @@ enum USER_SETTINGS {
                       // the time always round down in increments of 5 minutes, i.e. 12:29:59 -> 12:25. This settings
                       // also influences the behavior of the minute dots.
     SAYINGS_ENABLED,  // Enables or disables sayings.
-    SAYING_INTERVAL_S,    // Determines the interval at which sayings occur in seconds.
-    SAYING_DURATION_S,    // Determines how long a saying is displayed in seconds.
-    FADE_CYCLE_S,         // Duration of fade in/out cycles in seconds.
-    ACTIVE_PALETTES,      // Bitmask of active palettes
-    PALETTE_INTERVAL_S,   // Interval to change palette in seconds
-    PALETTE_CYCLE_S,      // Cycle speed for return to start of palette in seconds
-    PALETTE_ROW_SPACING,  // Spacing of palette rows (in LED rows)
+    SAYING_INTERVAL_S,            // Determines the interval at which sayings occur in seconds.
+    SAYING_DURATION_S,            // Determines how long a saying is displayed in seconds.
+    FADE_CYCLE_S,                 // Duration of fade in/out cycles in seconds.
+    ACTIVE_PALETTES,              // Bitmask of active palettes
+    PALETTE_INTERVAL_S,           // Interval to change palette in seconds
+    PALETTE_CYCLE_S,              // Cycle speed for return to start of palette in seconds
+    PALETTE_ROW_SPACING,          // Spacing of palette rows (in LED rows)
+    MANUAL_BRIGHTNESS,            // Manual brightness level (0-255)
+    MANUAL_BRIGHTNESS_TIMEOUT_S,  // Timeout in seconds before returning to automatic brightness
     SETTINGS_COUNT
 };
 extern int USER_SETTINGS[];

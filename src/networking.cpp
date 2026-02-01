@@ -264,7 +264,9 @@ void WCNetworkManager::setup_server() {
                       ", \"fade_cycle_s\": " + String(USER_SETTINGS[FADE_CYCLE_S]) +
                       ", \"palette_interval_s\": " + String(USER_SETTINGS[PALETTE_INTERVAL_S]) +
                       ", \"palette_cycle_s\": " + String(USER_SETTINGS[PALETTE_CYCLE_S]) +
-                      ", \"palette_row_spacing\": " + String(USER_SETTINGS[PALETTE_ROW_SPACING]) + "}";
+                      ", \"palette_row_spacing\": " + String(USER_SETTINGS[PALETTE_ROW_SPACING]) +
+                      ", \"manual_brightness\": " + String(USER_SETTINGS[MANUAL_BRIGHTNESS]) +
+                      ", \"manual_brightness_timeout_s\": " + String(USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]) + "}";
 
         request->send(200, "application/json", json);
     });
@@ -319,6 +321,16 @@ void WCNetworkManager::setup_server() {
                         value = 0;
                     else if (value > 5)
                         value = 5;
+                } else if (setting == MANUAL_BRIGHTNESS) {
+                    if (value < 0)
+                        value = 0;
+                    else if (value > 255)
+                        value = 255;
+                } else if (setting == MANUAL_BRIGHTNESS_TIMEOUT_S) {
+                    if (value < 60)
+                        value = 60;
+                    else if (value > 14400)
+                        value = 14400;
                 }
 
                 // Save the setting

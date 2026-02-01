@@ -12,7 +12,8 @@ void Storage::initialize() {
 bool Storage::check_user_settings_saved() {
     if (PREFS.isKey("setting_rdt") && PREFS.isKey("setting_sen") && PREFS.isKey("setting_sis") &&
         PREFS.isKey("setting_sds") && PREFS.isKey("setting_fcs") && PREFS.isKey("setting_acp") &&
-        PREFS.isKey("setting_pin") && PREFS.isKey("setting_pcy") && PREFS.isKey("setting_prs"))
+        PREFS.isKey("setting_pin") && PREFS.isKey("setting_pcy") && PREFS.isKey("setting_prs") &&
+        PREFS.isKey("setting_mbr") && PREFS.isKey("setting_mbt"))
         return true;
 
     return false;
@@ -28,6 +29,8 @@ void Storage::save_user_settings() {
     PREFS.putInt("setting_pin", USER_SETTINGS[PALETTE_INTERVAL_S]);
     PREFS.putInt("setting_pcy", USER_SETTINGS[PALETTE_CYCLE_S]);
     PREFS.putInt("setting_prs", USER_SETTINGS[PALETTE_ROW_SPACING]);
+    PREFS.putInt("setting_mbr", USER_SETTINGS[MANUAL_BRIGHTNESS]);
+    PREFS.putInt("setting_mbt", USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]);
 }
 
 void Storage::load_user_settings() {
@@ -40,6 +43,8 @@ void Storage::load_user_settings() {
     USER_SETTINGS[PALETTE_INTERVAL_S] = PREFS.getInt("setting_pin");
     USER_SETTINGS[PALETTE_CYCLE_S] = PREFS.getInt("setting_pcy");
     USER_SETTINGS[PALETTE_ROW_SPACING] = PREFS.getInt("setting_prs");
+    USER_SETTINGS[MANUAL_BRIGHTNESS] = PREFS.getInt("setting_mbr");
+    USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S] = PREFS.getInt("setting_mbt");
 
     // String log_line = "Loaded user settings:\n";
     // LOGGER.println(log_line);
@@ -63,7 +68,11 @@ void Storage::load_user_settings() {
     LOGGER.print(", ");
     LOGGER.print(String(USER_SETTINGS[PALETTE_CYCLE_S]));
     LOGGER.print(", ");
-    LOGGER.println(String(USER_SETTINGS[PALETTE_ROW_SPACING]));
+    LOGGER.print(String(USER_SETTINGS[PALETTE_ROW_SPACING]));
+    LOGGER.print(", ");
+    LOGGER.print(String(USER_SETTINGS[MANUAL_BRIGHTNESS]));
+    LOGGER.print(", ");
+    LOGGER.println(String(USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]));
 }
 
 void Storage::default_user_settings() {
@@ -73,9 +82,11 @@ void Storage::default_user_settings() {
     PREFS.putInt("setting_sds", 15);
     PREFS.putInt("setting_fcs", 4);
     PREFS.putInt("setting_acp", 511);
-    PREFS.putInt("setting_pin", 300);
+    PREFS.putInt("setting_pin", 120);
     PREFS.putInt("setting_pcy", 10);
     PREFS.putInt("setting_prs", 3);
+    PREFS.putInt("setting_mbr", 255);
+    PREFS.putInt("setting_mbt", 60);
 
     LOGGER.println("Geen instellingen gevonden, standaardinstellingen opgeslagen.");
 }

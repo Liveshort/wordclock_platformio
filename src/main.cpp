@@ -123,6 +123,8 @@ void setup() {
 // The state change to NEXT_STATE is handled in the main loop after this function is called and is immediate.
 // It takes a snapshot of the current LED state for crossfading and uses that as the source for the crossfade.
 void trigger_fast_transition() {
+    LED_CONTROLLER.save_current_state();
+
     FLAGS[TRANSITIONING] = true;
     FLAGS[TRIGGER_STATE_CHANGE] = true;
     FLAGS[CROSSFADING] = true;
@@ -162,12 +164,30 @@ void return_to_normal_operation() {
     trigger_slow_transition();
 }
 
+// This code is duplicated between pressing a button and automatic sayings. It is moved to a function for clarity.
+void setup_random_saying(bool crossfade_from_current = false) {
+    TIMERS[SAYING_INTERVAL_TIMER] = millis();
+    // The fade offset makes sure that sayings are displayed for the correct duration, accounting for fade in/out time.
+    int half_fade_offset_ms;
+    if (!crossfade_from_current)
+        half_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 2;
+    else
+        half_fade_offset_ms = 150;  // Crossfade is fixed at 300ms total
+
+    TIMERS[RANDOM_SAYING_TIMER] = millis() + half_fade_offset_ms;
+    // There are 11 sayings, every one is duplicated, some have 2 variants.
+    // The 11th saying has two pieces that are displayed after another.
+    RANDOM_SAYING_INDEX = random(0, 21);
+    FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
+}
+
 void loop() {
     // Handle background tasks
     EVERY_N_MILLISECONDS(500) {
         NETWORK_MANAGER.update();
         update_time();
         update_light_sensor_values();
+        LED_CONTROLLER.check_cycle_themes();
 
         // If sayings are disabled, keep resetting the sayings timer, so no sayings are shown
         if (USER_SETTINGS[SAYINGS_ENABLED] == 0) {
@@ -196,13 +216,28 @@ void loop() {
     }
     if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
         BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
-        LOGGER.println("GEZEGDE button pressed!");
+        if (FLAGS[TIME_INITIALIZED] == false) {
+            LOGGER.println("GEZEGDE-knop ingedrukt, maar tijd nog niet geïnitialiseerd!");
+        } else {
+            setup_random_saying(true);
+
+            // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a
+            // snapshot of the current LED state and crossfading from that.
+            CURR_STATE = FORCED_SAYING;
+            NEXT_STATE = FORCED_SAYING;
+            trigger_fast_transition();
+
+            LOGGER.println("GEZEGDE-knop ingedrukt!");
+        }
     }
 
     // Handle server-requested state changes
     if (FLAGS[SERVER_REQUESTS_DRAWING_BOARD] && CURR_STATE == NORMAL_OPERATION) {
         FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = false;
-        LED_CONTROLLER.save_current_state();
+
+        // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a snapshot of
+        // the current LED state and crossfading from that.
+        CURR_STATE = DRAWING_BOARD;
         NEXT_STATE = DRAWING_BOARD;
         trigger_fast_transition();
         TIMERS[DRAWING_BOARD_TIMER] = millis();
@@ -212,8 +247,6 @@ void loop() {
     // Handle palette cycle interrupt
     if (FLAGS[INTERRUPT_PALETTE_CYCLE]) {
         FLAGS[INTERRUPT_PALETTE_CYCLE] = false;
-        LED_CONTROLLER.save_current_state();
-        LED_CONTROLLER.set_current_theme_to_target();
         trigger_fast_transition();
     }
 
@@ -279,14 +312,8 @@ void loop() {
                         // If the sayings timer has expired, show a saying
                         if (!FLAGS[TRANSITIONING] &&
                             (millis() - TIMERS[SAYING_INTERVAL_TIMER] > USER_SETTINGS[SAYING_INTERVAL_S] * 1000)) {
-                            TIMERS[SAYING_INTERVAL_TIMER] = millis();
-                            int half_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 2;
-                            TIMERS[RANDOM_SAYING_TIMER] = millis() + half_fade_offset_ms;
+                            setup_random_saying();
                             NEXT_NO_SUBSTATE = SUBSTATE_SHOW_SAYING;
-                            RANDOM_SAYING_INDEX =
-                                random(0, 20);  // There are 11 sayings, every one is duplicated, some have 2 variants.
-                                                // The 11th saying has two pieces that are displayed after another.
-                            FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
                             trigger_slow_transition();
                         }
 
@@ -313,6 +340,27 @@ void loop() {
                         LED_CONTROLLER.show_saying(RANDOM_SAYING_INDEX);
                         break;
                 }
+                break;
+            case FORCED_SAYING:
+                if (!TRANSITIONING)
+                    FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
+
+                // After showing the saying for <duration>, return to showing the time in normal operation
+                if (RANDOM_SAYING_INDEX != 20 && !FLAGS[TRANSITIONING] && millis() > TIMERS[RANDOM_SAYING_TIMER] &&
+                    (millis() - TIMERS[RANDOM_SAYING_TIMER] > USER_SETTINGS[SAYING_DURATION_S] * 1000)) {
+                    NEXT_STATE = NORMAL_OPERATION;
+                    NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                    trigger_slow_transition();
+                } else if (RANDOM_SAYING_INDEX == 20 && !FLAGS[TRANSITIONING] &&
+                           millis() > TIMERS[RANDOM_SAYING_TIMER] &&
+                           (millis() - TIMERS[RANDOM_SAYING_TIMER] > (USER_SETTINGS[SAYING_DURATION_S] * 1000) / 2)) {
+                    FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = true;
+                    // The index is set to 21 in the safe state change handler after the state change is
+                    // triggered
+                    trigger_slow_transition();
+                }
+
+                LED_CONTROLLER.show_saying(RANDOM_SAYING_INDEX);
                 break;
             case DRAWING_BOARD:
                 // Check if the flag has been unset, so we can return to normal operation
@@ -350,6 +398,7 @@ void loop() {
         // transition.
         if (FLAGS[TRIGGER_STATE_CHANGE]) {
             CURR_STATE = NEXT_STATE;
+            CURRENT_PALETTE_IDX = TARGET_PALETTE_IDX;
             CURR_NO_SUBSTATE = NEXT_NO_SUBSTATE;
             FLAGS[TRIGGER_STATE_CHANGE] = false;
 

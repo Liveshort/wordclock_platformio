@@ -188,14 +188,11 @@ int LEDController::cycle_theme_now() {
     // Actual transition will be handled in the main loop
     if (CURRENT_PALETTE_IDX != TARGET_PALETTE_IDX) {
         FLAGS[INTERRUPT_PALETTE_CYCLE] = true;
+        CURRENT_PALETTE_IDX = TARGET_PALETTE_IDX;
         return 1;
     }
 
     return 0;
-}
-
-void LEDController::set_current_theme_to_target() {
-    CURRENT_PALETTE_IDX = TARGET_PALETTE_IDX;
 }
 
 void LEDController::overlay_AP_active(bool ap_active) {
