@@ -56,6 +56,9 @@ enum TIMERS {
     RANDOM_SAYING_TIMER,     // Time the currently displayed automatic saying started
     DRAWING_BOARD_TIMER,     // Last time drawing board activity was detected
     PALETTE_INTERVAL_TIMER,  // Last time the palette was changed
+    DIMMER_BUTTON_TIMER,     // Last time the dimmer button was pressed
+    DIMMER_TIMER,            // Last time the dimmer was set
+    WIFI_BUTTON_TIMER,       // Last time the wifi button was pressed
     TIMER_COUNT
 };
 extern unsigned long TIMERS[];
@@ -84,6 +87,7 @@ enum USER_SETTINGS {
     PALETTE_ROW_SPACING,          // Spacing of palette rows (in LED rows)
     MANUAL_BRIGHTNESS,            // Manual brightness level (0-255)
     MANUAL_BRIGHTNESS_TIMEOUT_S,  // Timeout in seconds before returning to automatic brightness
+    MANUAL_BRIGHTNESS_SELECT,     // Manual brightness to select after selection timeout expires (0-255)
     SETTINGS_COUNT
 };
 extern int USER_SETTINGS[];
@@ -100,7 +104,7 @@ enum SUPER_STATE {
     TIMER_SET,
     TIMER_RUNNING,
     TIMER_FINISHED,
-    NIGHT_MODE
+    DIMMER_SET
 };
 extern SUPER_STATE CURR_STATE;
 extern SUPER_STATE NEXT_STATE;
@@ -116,12 +120,15 @@ enum ANIMATIONS {
     WIFI_CONNECTED_BLINK,
     TIME_SYNC_BREATHING,
     TIME_SYNCED_BLINK,
+    OVERLAY_WIFI_ACTIVE,
     OVERLAY_AP_ACTIVE,
+    OVERLAY_WIFI_CONNECT_FAILED,
     OVERLAY_BUTTON_PRESS_1,
     OVERLAY_BUTTON_PRESS_2,
     OVERLAY_BUTTON_PRESS_3,
     OVERLAY_BUTTON_PRESS_4,
     OVERLAY_BUTTON_PRESS_5,
+    DIMMER_SELECT_BREATHING,
     ANIMATION_COUNT
 };
 extern byte ANIMATION_STATES[];

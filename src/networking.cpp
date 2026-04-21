@@ -227,7 +227,7 @@ void WCNetworkManager::setup_server() {
         if (!FLAGS[TIME_INITIALIZED]) {
             last_time_sync_string = "-";
         } else {
-            unsigned long time_since_last_time_sync = millis() / 1000 - TIMERS[TIME_SYNC];
+            unsigned long time_since_last_time_sync = (millis() - TIMERS[TIME_SYNC]) / 1000;
             unsigned int seconds = time_since_last_time_sync % 60;
             unsigned int minutes = (time_since_last_time_sync / 60) % 60;
             unsigned int hours = (time_since_last_time_sync / 3600) % 24;
@@ -584,6 +584,15 @@ void WCNetworkManager::turn_on_wifi_and_AP() {
         FLAGS[WIFI_CONNECTING] = true;
         WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
     }
+}
+
+void WCNetworkManager::turn_off_wifi() {
+    FLAGS[WIFI_CONNECTING] = false;
+    wifi_connect_attempt_counter = 0;
+
+    FLAGS[WIFI_ACTIVE] = false;
+    FLAGS[AP_ACTIVE] = false;
+    WiFi.mode(WIFI_OFF);
 }
 
 void WCNetworkManager::update() {

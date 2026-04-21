@@ -29,7 +29,7 @@ void Storage::save_user_settings() {
     PREFS.putInt("setting_pin", USER_SETTINGS[PALETTE_INTERVAL_S]);
     PREFS.putInt("setting_pcy", USER_SETTINGS[PALETTE_CYCLE_S]);
     PREFS.putInt("setting_prs", USER_SETTINGS[PALETTE_ROW_SPACING]);
-    PREFS.putInt("setting_mbr", USER_SETTINGS[MANUAL_BRIGHTNESS]);
+    PREFS.putInt("setting_mbr", 255);
     PREFS.putInt("setting_mbt", USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]);
 }
 
@@ -75,18 +75,36 @@ void Storage::load_user_settings() {
     LOGGER.println(String(USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]));
 }
 
+// Default settings for testing purposes
+// void Storage::default_user_settings() {
+//     PREFS.putInt("setting_rdt", 1);
+//     PREFS.putInt("setting_sen", 1);
+//     PREFS.putInt("setting_sis", 40);
+//     PREFS.putInt("setting_sds", 15);
+//     PREFS.putInt("setting_fcs", 4);
+//     PREFS.putInt("setting_acp", 511);
+//     PREFS.putInt("setting_pin", 120);
+//     PREFS.putInt("setting_pcy", 10);
+//     PREFS.putInt("setting_prs", 3);
+//     PREFS.putInt("setting_mbr", 255);
+//     PREFS.putInt("setting_mbt", 60);
+
+//     LOGGER.println("Geen instellingen gevonden, standaardinstellingen opgeslagen.");
+// }
+
+// Realistic default settings
 void Storage::default_user_settings() {
     PREFS.putInt("setting_rdt", 1);
     PREFS.putInt("setting_sen", 1);
-    PREFS.putInt("setting_sis", 40);
+    PREFS.putInt("setting_sis", 293);
     PREFS.putInt("setting_sds", 15);
     PREFS.putInt("setting_fcs", 4);
     PREFS.putInt("setting_acp", 511);
-    PREFS.putInt("setting_pin", 120);
-    PREFS.putInt("setting_pcy", 10);
+    PREFS.putInt("setting_pin", 7200);
+    PREFS.putInt("setting_pcy", 20);
     PREFS.putInt("setting_prs", 3);
     PREFS.putInt("setting_mbr", 255);
-    PREFS.putInt("setting_mbt", 60);
+    PREFS.putInt("setting_mbt", 10800);
 
     LOGGER.println("Geen instellingen gevonden, standaardinstellingen opgeslagen.");
 }

@@ -23,6 +23,7 @@ class WCNetworkManager {
     void setup_server();
     void turn_on_wifi();
     void turn_on_wifi_and_AP();
+    void turn_off_wifi();
     void update();
     void update_wifi();
     void update_wifi_and_AP();
