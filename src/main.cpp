@@ -89,9 +89,6 @@ void initialize_globals_and_workers() {
 
     initialize_buttons();
 
-    // Temporary: set default user settings, we are adding more settings later
-    STORAGE.default_user_settings();
-
     // Check and load user settings
     if (STORAGE.check_user_settings_saved()) {
         STORAGE.load_user_settings();
@@ -106,7 +103,7 @@ void setup() {
 
     initialize_globals_and_workers();
 
-    if (false && STORAGE.check_saved_wifi_credentials())
+    if (STORAGE.check_saved_wifi_credentials())
         NETWORK_MANAGER.turn_on_wifi();
     else
         NETWORK_MANAGER.turn_on_wifi_and_AP();
@@ -123,6 +120,8 @@ void setup() {
 // The state change to NEXT_STATE is handled in the main loop after this function is called and is immediate.
 // It takes a snapshot of the current LED state for crossfading and uses that as the source for the crossfade.
 void trigger_fast_transition() {
+    LED_CONTROLLER.save_current_state();
+
     FLAGS[TRANSITIONING] = true;
     FLAGS[TRIGGER_STATE_CHANGE] = true;
     FLAGS[CROSSFADING] = true;
@@ -148,8 +147,8 @@ void update_light_sensor_values() {
     LIGHT_SENSOR_VALUES[0][index] = analogRead(33);
     LIGHT_SENSOR_VALUES[1][index] = analogRead(32);
 
-    Serial.println("Light levels - Left: " + String(LIGHT_SENSOR_VALUES[0][index]) +
-                   " | Right: " + String(LIGHT_SENSOR_VALUES[1][index]));
+    // Serial.println("Light levels - Left: " + String(LIGHT_SENSOR_VALUES[0][index]) +
+    //                " | Right: " + String(LIGHT_SENSOR_VALUES[1][index]));
 
     index = (index + 1) % 10;
 }
@@ -162,31 +161,219 @@ void return_to_normal_operation() {
     trigger_slow_transition();
 }
 
+// This code is duplicated between pressing a button and automatic sayings. It is moved to a function for clarity.
+void setup_random_saying(bool crossfade_from_current = false) {
+    TIMERS[SAYING_INTERVAL_TIMER] = millis();
+    // The fade offset makes sure that sayings are displayed for the correct duration, accounting for fade in/out time.
+    int half_fade_offset_ms;
+    if (!crossfade_from_current)
+        half_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 2;
+    else
+        half_fade_offset_ms = 150;  // Crossfade is fixed at 300ms total
+
+    TIMERS[RANDOM_SAYING_TIMER] = millis() + half_fade_offset_ms;
+    // There are 11 sayings, every one is duplicated, some have 2 variants.
+    // The 11th saying has two pieces that are displayed after another.
+    RANDOM_SAYING_INDEX = random(0, 21);
+    FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
+}
+
 void loop() {
     // Handle background tasks
     EVERY_N_MILLISECONDS(500) {
         NETWORK_MANAGER.update();
         update_time();
         update_light_sensor_values();
+        LED_CONTROLLER.check_cycle_themes();
 
         // If sayings are disabled, keep resetting the sayings timer, so no sayings are shown
         if (USER_SETTINGS[SAYINGS_ENABLED] == 0) {
             TIMERS[SAYING_INTERVAL_TIMER] = millis();
         }
+
+        if (request_time_sync() && !FLAGS[WIFI_ACTIVE]) {
+            NETWORK_MANAGER.turn_on_wifi();
+        } else if (!request_time_sync() && FLAGS[WIFI_ACTIVE] && !FLAGS[AP_ACTIVE]) {
+            NETWORK_MANAGER.turn_off_wifi();
+        }
     }
 
-    // Check for button presses
+    // First detect and save if any button was pressed, then handle the button presses
+    if (BUTTONS_PRESSED[BUTTON_DIMMER] || BUTTONS_PRESSED[BUTTON_TIMER] || BUTTONS_PRESSED[BUTTON_WIFI] ||
+        BUTTONS_PRESSED[BUTTON_THEMA] || BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
+        // If the clock is dimmed, any buttons wakes it up. Don't handle the button press seperately after
+        if (USER_SETTINGS[MANUAL_BRIGHTNESS] == 0) {
+            USER_SETTINGS[MANUAL_BRIGHTNESS] = 255;
+
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+
+        // If we are setting the timer, use the alternate button meaning
+        if (CURR_STATE == TIMER_SET) {
+            // Any time the button is pressed, reset the animation and clock state to full brightness
+            ANIMATION_STATES[TIMER_SELECT_BREATHING] = 255;
+            // Also reset the 10 minute timeout
+            TIMERS[TIMER_BUTTON_TIMER] = millis();
+            // The gezegde and dimmer buttons act as + and -. Wifi button acts as start. The other buttons are ignored.
+            // + button (GEZEGDE)
+            if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
+                if (USER_SETTINGS[TIMER_SELECT_S] < 180)
+                    USER_SETTINGS[TIMER_SELECT_S] += 10;
+                else if (USER_SETTINGS[TIMER_SELECT_S] < 600)
+                    USER_SETTINGS[TIMER_SELECT_S] += 30;
+                else if (USER_SETTINGS[TIMER_SELECT_S] < 1800)
+                    USER_SETTINGS[TIMER_SELECT_S] += 60;
+                else if (USER_SETTINGS[TIMER_SELECT_S] < 5400)
+                    USER_SETTINGS[TIMER_SELECT_S] += 300;
+            }
+            // Start button (WIFI) starts the timer and goes to the TIMER_RUNNING state
+            if (BUTTONS_PRESSED[BUTTON_WIFI]) {
+                USER_SETTINGS[TIMER_S] = USER_SETTINGS[TIMER_SELECT_S];
+                TIMERS[TIMER_TIMER] = millis();
+
+                CURR_STATE = TIMER_RUNNING;
+                NEXT_STATE = TIMER_RUNNING;
+                trigger_fast_transition();
+            }
+            // - button (DIMMER)
+            if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
+                if (USER_SETTINGS[TIMER_SELECT_S] > 5400)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 300;
+                else if (USER_SETTINGS[TIMER_SELECT_S] > 600)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 60;
+                else if (USER_SETTINGS[TIMER_SELECT_S] > 180)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 30;
+                else if (USER_SETTINGS[TIMER_SELECT_S] > 10)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 10;
+            }
+
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+
+        // If the timer is running, use the alternate button meaning
+        if (CURR_STATE == TIMER_RUNNING || CURR_STATE == TIMER_PAUSED) {
+            // Any time the button is pressed, reset the animation and clock state to full brightness
+            ANIMATION_STATES[TIMER_SELECT_BREATHING] = 255;
+            // The gezegde and dimmer buttons act as + and pause. The other buttons are ignored.
+            // + button (GEZEGDE)
+            if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
+                if (USER_SETTINGS[TIMER_S] < 180)
+                    USER_SETTINGS[TIMER_S] += 10;
+                else if (USER_SETTINGS[TIMER_S] < 600)
+                    USER_SETTINGS[TIMER_S] += 30;
+                else if (USER_SETTINGS[TIMER_S] < 1800)
+                    USER_SETTINGS[TIMER_S] += 60;
+                else if (USER_SETTINGS[TIMER_S] < 5400)
+                    USER_SETTINGS[TIMER_S] += 300;
+            }
+            // Pause button (WIFI) pauses or resumes the timer
+            if (BUTTONS_PRESSED[BUTTON_WIFI] && CURR_STATE == TIMER_RUNNING) {
+                USER_SETTINGS[TIMER_ELAPSED_MS] = millis() - TIMERS[TIMER_TIMER];
+                CURR_STATE = TIMER_PAUSED;
+                NEXT_STATE = TIMER_PAUSED;
+                trigger_fast_transition();
+            } else if (BUTTONS_PRESSED[BUTTON_WIFI] && CURR_STATE == TIMER_PAUSED) {
+                CURR_STATE = TIMER_RUNNING;
+                NEXT_STATE = TIMER_RUNNING;
+                trigger_fast_transition();
+            }
+            // Stop button (DIMMER) returns to normal operation immediately
+            if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
+                CURR_STATE = NORMAL_OPERATION;
+                NEXT_STATE = NORMAL_OPERATION;
+                CURR_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                trigger_fast_transition();
+            }
+
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+
+        // If the timer is finished, pressing any buttons return the clock to normal operation immediately
+        if (CURR_STATE == TIMER_FINISHED) {
+            CURR_STATE = NORMAL_OPERATION;
+            NEXT_STATE = NORMAL_OPERATION;
+            CURR_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+            NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+            trigger_fast_transition();
+
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+    }
+    // Handle the button presses in the normal state
     if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
         BUTTONS_PRESSED[BUTTON_DIMMER] = false;
-        LOGGER.println("DIMMER button pressed!");
+
+        TIMERS[DIMMER_BUTTON_TIMER] = millis();
+
+        // Any time the button is pressed, reset the animation and clock state to full brightness
+        ANIMATION_STATES[DIMMER_SELECT_BREATHING] = 255;
+        USER_SETTINGS[MANUAL_BRIGHTNESS] = 255;
+
+        // If we are not already in the dimmer select state, switch to it and set the selected brightness to AAN
+        // If we are already in the dimmer state, cycle through the brightness options: AAN -> DIM -> UIT -> AAN
+        if (CURR_STATE != DIMMER_SET) {
+            USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT] = 255;
+
+            // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a
+            // snapshot of the current LED state and crossfading from that.
+            CURR_STATE = DIMMER_SET;
+            NEXT_STATE = DIMMER_SET;
+            trigger_fast_transition();
+        } else if (USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT] == 255)
+            USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT] = 32;
+        else if (USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT] == 32)
+            USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT] = 0;
+        else
+            USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT] = 255;
     }
     if (BUTTONS_PRESSED[BUTTON_TIMER]) {
         BUTTONS_PRESSED[BUTTON_TIMER] = false;
-        LOGGER.println("TIMER button pressed!");
+
+        TIMERS[TIMER_BUTTON_TIMER] = millis();
+
+        if (CURR_STATE != TIMER_SET) {
+            USER_SETTINGS[TIMER_SELECT_S] = 60;
+
+            // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a
+            // snapshot of the current LED state and crossfading from that.
+            CURR_STATE = TIMER_SET;
+            NEXT_STATE = TIMER_SET;
+            trigger_fast_transition();
+        }
     }
     if (BUTTONS_PRESSED[BUTTON_WIFI]) {
         BUTTONS_PRESSED[BUTTON_WIFI] = false;
-        LOGGER.println("WIFI button pressed!");
+
+        // Debounce this button for 2 seconds to give the wifi radio change some breathing room
+        if (millis() - TIMERS[WIFI_BUTTON_TIMER] > 2000) {
+            if (FLAGS[AP_ACTIVE])
+                NETWORK_MANAGER.turn_off_wifi();
+            else
+                NETWORK_MANAGER.turn_on_wifi_and_AP();
+        }
+
+        TIMERS[WIFI_BUTTON_TIMER] = millis();
     }
     if (BUTTONS_PRESSED[BUTTON_THEMA]) {
         BUTTONS_PRESSED[BUTTON_THEMA] = false;
@@ -196,13 +383,26 @@ void loop() {
     }
     if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
         BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
-        LOGGER.println("GEZEGDE button pressed!");
+        if (FLAGS[TIME_INITIALIZED] == false) {
+            LOGGER.println("GEZEGDE-knop ingedrukt, maar tijd nog niet geïnitialiseerd!");
+        } else {
+            setup_random_saying(true);
+
+            // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a
+            // snapshot of the current LED state and crossfading from that.
+            CURR_STATE = FORCED_SAYING;
+            NEXT_STATE = FORCED_SAYING;
+            trigger_fast_transition();
+        }
     }
 
     // Handle server-requested state changes
     if (FLAGS[SERVER_REQUESTS_DRAWING_BOARD] && CURR_STATE == NORMAL_OPERATION) {
         FLAGS[SERVER_REQUESTS_DRAWING_BOARD] = false;
-        LED_CONTROLLER.save_current_state();
+
+        // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a snapshot of
+        // the current LED state and crossfading from that.
+        CURR_STATE = DRAWING_BOARD;
         NEXT_STATE = DRAWING_BOARD;
         trigger_fast_transition();
         TIMERS[DRAWING_BOARD_TIMER] = millis();
@@ -212,8 +412,6 @@ void loop() {
     // Handle palette cycle interrupt
     if (FLAGS[INTERRUPT_PALETTE_CYCLE]) {
         FLAGS[INTERRUPT_PALETTE_CYCLE] = false;
-        LED_CONTROLLER.save_current_state();
-        LED_CONTROLLER.set_current_theme_to_target();
         trigger_fast_transition();
     }
 
@@ -279,14 +477,8 @@ void loop() {
                         // If the sayings timer has expired, show a saying
                         if (!FLAGS[TRANSITIONING] &&
                             (millis() - TIMERS[SAYING_INTERVAL_TIMER] > USER_SETTINGS[SAYING_INTERVAL_S] * 1000)) {
-                            TIMERS[SAYING_INTERVAL_TIMER] = millis();
-                            int half_fade_offset_ms = 1000 * USER_SETTINGS[FADE_CYCLE_S] * 255 / 240 / 2;
-                            TIMERS[RANDOM_SAYING_TIMER] = millis() + half_fade_offset_ms;
+                            setup_random_saying();
                             NEXT_NO_SUBSTATE = SUBSTATE_SHOW_SAYING;
-                            RANDOM_SAYING_INDEX =
-                                random(0, 20);  // There are 11 sayings, every one is duplicated, some have 2 variants.
-                                                // The 11th saying has two pieces that are displayed after another.
-                            FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
                             trigger_slow_transition();
                         }
 
@@ -314,6 +506,75 @@ void loop() {
                         break;
                 }
                 break;
+            case FORCED_SAYING:
+                if (!TRANSITIONING)
+                    FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
+
+                // After showing the saying for <duration>, return to showing the time in normal operation
+                if (RANDOM_SAYING_INDEX != 20 && !FLAGS[TRANSITIONING] && millis() > TIMERS[RANDOM_SAYING_TIMER] &&
+                    (millis() - TIMERS[RANDOM_SAYING_TIMER] > USER_SETTINGS[SAYING_DURATION_S] * 1000)) {
+                    NEXT_STATE = NORMAL_OPERATION;
+                    NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                    trigger_slow_transition();
+                } else if (RANDOM_SAYING_INDEX == 20 && !FLAGS[TRANSITIONING] &&
+                           millis() > TIMERS[RANDOM_SAYING_TIMER] &&
+                           (millis() - TIMERS[RANDOM_SAYING_TIMER] > (USER_SETTINGS[SAYING_DURATION_S] * 1000) / 2 -
+                                                                         (USER_SETTINGS[FADE_CYCLE_S] / 2 - 300) / 2)) {
+                    FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = true;
+                    // The index is set to 21 in the safe state change handler after the state change is
+                    // triggered
+                    trigger_slow_transition();
+                }
+
+                LED_CONTROLLER.show_saying(RANDOM_SAYING_INDEX);
+                break;
+            case DIMMER_SET:
+                // After showing the dimmer select screen for <duration>, return to showing the time
+                if (millis() - TIMERS[DIMMER_BUTTON_TIMER] > 15000) {
+                    USER_SETTINGS[MANUAL_BRIGHTNESS] = USER_SETTINGS[MANUAL_BRIGHTNESS_SELECT];
+                    TIMERS[DIMMER_TIMER] = millis();
+
+                    NEXT_STATE = NORMAL_OPERATION;
+                    NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                    trigger_slow_transition();
+                }
+
+                LED_CONTROLLER.show_dimmer_set();
+                break;
+            case TIMER_SET:
+                // The timer select screen has a 10 minute timeout, after which return to showing the time
+                if (millis() - TIMERS[TIMER_BUTTON_TIMER] > USER_SETTINGS[TIMER_SELECT_TIMEOUT_S] * 1000) {
+                    USER_SETTINGS[TIMER_S] = USER_SETTINGS[TIMER_SELECT_S];
+                    TIMERS[TIMER_TIMER] = millis();
+
+                    CURR_STATE = TIMER_RUNNING;
+                    NEXT_STATE = TIMER_RUNNING;
+                    trigger_fast_transition();
+                }
+
+                LED_CONTROLLER.show_timer_set();
+                break;
+            case TIMER_RUNNING:
+                // When the timer runs out, go to the timer finished screen
+                if (millis() - TIMERS[TIMER_TIMER] > 1000 * USER_SETTINGS[TIMER_S]) {
+                    CURR_STATE = TIMER_FINISHED;
+                    NEXT_STATE = TIMER_FINISHED;
+                    trigger_fast_transition();
+                }
+
+                LED_CONTROLLER.show_timer_running();
+                break;
+            case TIMER_PAUSED:
+                // If the timer is paused, we want to update the TIMERS[TIMER_TIMER] continuously so the the remaining
+                // time stays constant. We do this by setting the TIMER_TIMER to the current time minus the elapsed time
+                // whenever we are paused.
+                TIMERS[TIMER_TIMER] = millis() - USER_SETTINGS[TIMER_ELAPSED_MS];
+
+                LED_CONTROLLER.show_timer_running(true);
+                break;
+            case TIMER_FINISHED:
+                LED_CONTROLLER.show_timer_finished();
+                break;
             case DRAWING_BOARD:
                 // Check if the flag has been unset, so we can return to normal operation
                 if (!FLAGS[SERVER_REQUESTS_DRAWING_BOARD]) {
@@ -340,7 +601,12 @@ void loop() {
         }
 
         // Handle overlays
-        LED_CONTROLLER.overlay_AP_active(FLAGS[AP_ACTIVE]);
+        if (CURR_STATE != INITIALIZING && CURR_STATE != WAITING_FOR_WIFI && CURR_STATE != WIFI_CONNECTED_S &&
+            CURR_STATE != WAITING_FOR_TIME_SYNC && CURR_STATE != TIME_SYNCED_S) {
+            LED_CONTROLLER.overlay_wifi_connect_failed();
+            LED_CONTROLLER.overlay_wifi_active();
+            LED_CONTROLLER.overlay_AP_active();
+        }
 
         // Finally write the LED changes
         LED_CONTROLLER.update();
@@ -350,12 +616,17 @@ void loop() {
         // transition.
         if (FLAGS[TRIGGER_STATE_CHANGE]) {
             CURR_STATE = NEXT_STATE;
+            CURRENT_PALETTE_IDX = TARGET_PALETTE_IDX;
             CURR_NO_SUBSTATE = NEXT_NO_SUBSTATE;
             FLAGS[TRIGGER_STATE_CHANGE] = false;
 
             // Special handling for the two part saying
             if (FLAGS[TWO_PART_SAYING_GO_TO_PART_2])
                 RANDOM_SAYING_INDEX = 21;
+
+            // Check if the dimmer timer has expired
+            if (millis() - TIMERS[DIMMER_TIMER] > 1000 * USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S])
+                USER_SETTINGS[MANUAL_BRIGHTNESS] = 255;
         }
     }
 

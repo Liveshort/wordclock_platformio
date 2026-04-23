@@ -6,17 +6,32 @@
 #include "main.h"
 #include "time_functions.h"
 
+// Sync the time every 4 hours
+#define TIME_SYNC_INTERVAL 14400000  // milliseconds
+
 // Default timezone is Amsterdam
 // Other timezones can be found on https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 const char* default_timezone = "CET-1CEST,M3.5.0,M10.5.0/3";
 
+// This function controls if the wifi should be turned on or off.
+// It returns true if the time is not initialized yet or if the last time synchronization was more than
+// TIME_SYNC_INTERVAL ago. There is also a 5 second cooldown after the time has been synced, so there is no race
+// condition on the wifi being turned off immediately after syncing the time.
+bool request_time_sync() {
+    if (!FLAGS[TIME_INITIALIZED] || (millis() - TIMERS[TIME_SYNC] > TIME_SYNC_INTERVAL) ||
+        (millis() - TIMERS[TIME_SYNC] < 5000))
+        return true;
+    else
+        return false;
+}
+
 void time_synchronized_cb(struct timeval* tv) {
     LOGGER.println("Tijd gesynchroniseerd met NTP server.");
-    TIMERS[TIME_SYNC] = millis() / 1000;
+    TIMERS[TIME_SYNC] = millis();
 }
 
 void initialize_sntp_time_servers() {
-    sntp_set_sync_interval(5 * 60 * 1000UL);
+    sntp_set_sync_interval(TIME_SYNC_INTERVAL);
     sntp_set_time_sync_notification_cb(time_synchronized_cb);
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
     esp_sntp_setservername(0, "pool.ntp.org");

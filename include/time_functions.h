@@ -5,5 +5,6 @@ void initialize_sntp_time_servers();
 bool check_time_synchronization();
 bool update_time();
 void set_current_time_to_target_time();
+bool request_time_sync();
 
 #endif

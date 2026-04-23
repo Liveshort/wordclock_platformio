@@ -227,7 +227,7 @@ void WCNetworkManager::setup_server() {
         if (!FLAGS[TIME_INITIALIZED]) {
             last_time_sync_string = "-";
         } else {
-            unsigned long time_since_last_time_sync = millis() / 1000 - TIMERS[TIME_SYNC];
+            unsigned long time_since_last_time_sync = (millis() - TIMERS[TIME_SYNC]) / 1000;
             unsigned int seconds = time_since_last_time_sync % 60;
             unsigned int minutes = (time_since_last_time_sync / 60) % 60;
             unsigned int hours = (time_since_last_time_sync / 3600) % 24;
@@ -264,7 +264,9 @@ void WCNetworkManager::setup_server() {
                       ", \"fade_cycle_s\": " + String(USER_SETTINGS[FADE_CYCLE_S]) +
                       ", \"palette_interval_s\": " + String(USER_SETTINGS[PALETTE_INTERVAL_S]) +
                       ", \"palette_cycle_s\": " + String(USER_SETTINGS[PALETTE_CYCLE_S]) +
-                      ", \"palette_row_spacing\": " + String(USER_SETTINGS[PALETTE_ROW_SPACING]) + "}";
+                      ", \"palette_row_spacing\": " + String(USER_SETTINGS[PALETTE_ROW_SPACING]) +
+                      ", \"manual_brightness\": " + String(USER_SETTINGS[MANUAL_BRIGHTNESS]) +
+                      ", \"manual_brightness_timeout_s\": " + String(USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]) + "}";
 
         request->send(200, "application/json", json);
     });
@@ -319,6 +321,16 @@ void WCNetworkManager::setup_server() {
                         value = 0;
                     else if (value > 5)
                         value = 5;
+                } else if (setting == MANUAL_BRIGHTNESS) {
+                    if (value < 0)
+                        value = 0;
+                    else if (value > 255)
+                        value = 255;
+                } else if (setting == MANUAL_BRIGHTNESS_TIMEOUT_S) {
+                    if (value < 60)
+                        value = 60;
+                    else if (value > 14400)
+                        value = 14400;
                 }
 
                 // Save the setting
@@ -572,6 +584,15 @@ void WCNetworkManager::turn_on_wifi_and_AP() {
         FLAGS[WIFI_CONNECTING] = true;
         WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
     }
+}
+
+void WCNetworkManager::turn_off_wifi() {
+    FLAGS[WIFI_CONNECTING] = false;
+    wifi_connect_attempt_counter = 0;
+
+    FLAGS[WIFI_ACTIVE] = false;
+    FLAGS[AP_ACTIVE] = false;
+    WiFi.mode(WIFI_OFF);
 }
 
 void WCNetworkManager::update() {

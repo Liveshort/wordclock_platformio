@@ -3,8 +3,6 @@
 #include "log.h"
 #include "main.h"
 
-#define LOG_MAX_LENGTH 20
-
 Logger::Logger() {
     _serial_history_idx = 0;
     _serial_history_length = 0;

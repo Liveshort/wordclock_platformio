@@ -201,8 +201,9 @@ const char index_html[] PROGMEM = R"rawliteral(
             getCurrentAndTargetPalettes();
             updateLogShort();
             setInterval(updateStatus, 1000);
-            setInterval(updatePaletteCheckboxes, 1000);
+            setInterval(updatePaletteCheckboxes, 1200);
             setInterval(updateLogShort, 2500);
+            setInterval(getCurrentAndTargetPalettes, 1300);
         }
     </script>
 </head>
@@ -555,6 +556,10 @@ const char settings_html[] PROGMEM = R"rawliteral(
                     const rs = document.getElementById("select_palette_row_spacing");
                     if (rs) rs.value = String(data.palette_row_spacing);
                 }
+                if (data && data.manual_brightness_timeout_s !== undefined) {
+                    const mbt = document.getElementById("input_manual_brightness_timeout_s");
+                    if (mbt) mbt.value = String(data.manual_brightness_timeout_s);
+                }
             }).catch(err => console.error(err));
         }
     </script>
@@ -646,6 +651,16 @@ const char settings_html[] PROGMEM = R"rawliteral(
                     </select>
                 </td>
             </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: right; padding: 10px; font-weight: bold; color: white;">Timeout dimmer</td>
+                <td style="text-align: left; padding: 0px;" id="option_manual_brightness_timeout_s">
+                    <input type="number" id="input_manual_brightness_timeout_s" min="60" max="14400"
+                           onchange=""
+                           onblur="sendSetting(10, this.value)"
+                           onkeydown="if (event.key === 'Enter') { this.blur(); }"
+                           style="width:100px; padding:0px;" />
+                </td>
+            </tr>
         </table>
     </div>
     <h2>Legenda</h2>
@@ -698,6 +713,12 @@ const char settings_html[] PROGMEM = R"rawliteral(
             </tr>
             <tr style="background-color: #f5f9fc;">
                 <td style="text-align: left; padding: 10px; color: black;">Bepaalt hoeveel kleurvariatie tegelijk te zien is in de rijen van de klok.</td>
+            </tr>
+            <tr style="background-color: #54718f;">
+                <td style="text-align: center; padding: 10px; font-weight: bold; color: white;">Timeout dimmer</td>
+            </tr>
+            <tr style="background-color: #f5f9fc;">
+                <td style="text-align: left; padding: 10px; color: black;">Bepaalt na welke tijd de klok de dimmer automatisch uitschakelt. Minimaal 60 seconden, maximaal 4 uur.</td>
             </tr>
         </table>
     </div>
