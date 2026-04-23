@@ -3,7 +3,7 @@
 #include "buttons.h"
 #include "main.h"
 
-#define DEBOUNCE_DELAY 200  // milliseconds
+#define DEBOUNCE_DELAY 400  // milliseconds
 
 void IRAM_ATTR button_dimmer_isr() {
     unsigned long interrupt_time = millis();

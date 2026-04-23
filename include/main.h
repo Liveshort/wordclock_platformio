@@ -58,6 +58,8 @@ enum TIMERS {
     PALETTE_INTERVAL_TIMER,  // Last time the palette was changed
     DIMMER_BUTTON_TIMER,     // Last time the dimmer button was pressed
     DIMMER_TIMER,            // Last time the dimmer was set
+    TIMER_BUTTON_TIMER,      // Last time the timer button was pressed
+    TIMER_TIMER,             // Last time the timer was set
     WIFI_BUTTON_TIMER,       // Last time the wifi button was pressed
     TIMER_COUNT
 };
@@ -88,6 +90,10 @@ enum USER_SETTINGS {
     MANUAL_BRIGHTNESS,            // Manual brightness level (0-255)
     MANUAL_BRIGHTNESS_TIMEOUT_S,  // Timeout in seconds before returning to automatic brightness
     MANUAL_BRIGHTNESS_SELECT,     // Manual brightness to select after selection timeout expires (0-255)
+    TIMER_SELECT_S,               // Timer to set after the selection timeout expires
+    TIMER_S,                      // Selected timer duration in seconds
+    TIMER_ELAPSED_MS,             // Elapsed time in milliseconds since the timer was started
+    TIMER_SELECT_TIMEOUT_S,       // Timeout in seconds before returning to normal operation after timer selection
     SETTINGS_COUNT
 };
 extern int USER_SETTINGS[];
@@ -103,6 +109,7 @@ enum SUPER_STATE {
     FORCED_SAYING,
     TIMER_SET,
     TIMER_RUNNING,
+    TIMER_PAUSED,
     TIMER_FINISHED,
     DIMMER_SET
 };
@@ -129,6 +136,7 @@ enum ANIMATIONS {
     OVERLAY_BUTTON_PRESS_4,
     OVERLAY_BUTTON_PRESS_5,
     DIMMER_SELECT_BREATHING,
+    TIMER_SELECT_BREATHING,
     ANIMATION_COUNT
 };
 extern byte ANIMATION_STATES[];

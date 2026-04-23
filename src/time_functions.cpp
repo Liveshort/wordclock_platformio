@@ -13,8 +13,13 @@
 // Other timezones can be found on https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 const char* default_timezone = "CET-1CEST,M3.5.0,M10.5.0/3";
 
+// This function controls if the wifi should be turned on or off.
+// It returns true if the time is not initialized yet or if the last time synchronization was more than
+// TIME_SYNC_INTERVAL ago. There is also a 5 second cooldown after the time has been synced, so there is no race
+// condition on the wifi being turned off immediately after syncing the time.
 bool request_time_sync() {
-    if (!FLAGS[TIME_INITIALIZED] || (millis() - TIMERS[TIME_SYNC] > TIME_SYNC_INTERVAL))
+    if (!FLAGS[TIME_INITIALIZED] || (millis() - TIMERS[TIME_SYNC] > TIME_SYNC_INTERVAL) ||
+        (millis() - TIMERS[TIME_SYNC] < 5000))
         return true;
     else
         return false;

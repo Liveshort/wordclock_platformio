@@ -22,6 +22,9 @@ class LEDController {
     void show_time();
     void show_saying(int saying_index);
     void show_dimmer_set();
+    void show_timer_set();
+    void show_timer_running(bool paused = false);
+    void show_timer_finished();
     void show_drawing_board();  // Display drawing board LEDs with colors
     void update();
 };

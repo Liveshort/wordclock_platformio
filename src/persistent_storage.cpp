@@ -13,7 +13,7 @@ bool Storage::check_user_settings_saved() {
     if (PREFS.isKey("setting_rdt") && PREFS.isKey("setting_sen") && PREFS.isKey("setting_sis") &&
         PREFS.isKey("setting_sds") && PREFS.isKey("setting_fcs") && PREFS.isKey("setting_acp") &&
         PREFS.isKey("setting_pin") && PREFS.isKey("setting_pcy") && PREFS.isKey("setting_prs") &&
-        PREFS.isKey("setting_mbr") && PREFS.isKey("setting_mbt"))
+        PREFS.isKey("setting_mbr") && PREFS.isKey("setting_mbt") && PREFS.isKey("setting_tst"))
         return true;
 
     return false;
@@ -31,6 +31,7 @@ void Storage::save_user_settings() {
     PREFS.putInt("setting_prs", USER_SETTINGS[PALETTE_ROW_SPACING]);
     PREFS.putInt("setting_mbr", 255);
     PREFS.putInt("setting_mbt", USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]);
+    PREFS.putInt("setting_tst", 600);
 }
 
 void Storage::load_user_settings() {
@@ -45,6 +46,7 @@ void Storage::load_user_settings() {
     USER_SETTINGS[PALETTE_ROW_SPACING] = PREFS.getInt("setting_prs");
     USER_SETTINGS[MANUAL_BRIGHTNESS] = PREFS.getInt("setting_mbr");
     USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S] = PREFS.getInt("setting_mbt");
+    USER_SETTINGS[TIMER_SELECT_TIMEOUT_S] = PREFS.getInt("setting_tst");
 
     // String log_line = "Loaded user settings:\n";
     // LOGGER.println(log_line);
@@ -72,7 +74,9 @@ void Storage::load_user_settings() {
     LOGGER.print(", ");
     LOGGER.print(String(USER_SETTINGS[MANUAL_BRIGHTNESS]));
     LOGGER.print(", ");
-    LOGGER.println(String(USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]));
+    LOGGER.print(String(USER_SETTINGS[MANUAL_BRIGHTNESS_TIMEOUT_S]));
+    LOGGER.print(", ");
+    LOGGER.println(String(USER_SETTINGS[TIMER_SELECT_TIMEOUT_S]));
 }
 
 // Default settings for testing purposes
@@ -88,6 +92,7 @@ void Storage::load_user_settings() {
 //     PREFS.putInt("setting_prs", 3);
 //     PREFS.putInt("setting_mbr", 255);
 //     PREFS.putInt("setting_mbt", 60);
+//     PREFS.putInt("setting_tst", 60);
 
 //     LOGGER.println("Geen instellingen gevonden, standaardinstellingen opgeslagen.");
 // }
@@ -105,6 +110,7 @@ void Storage::default_user_settings() {
     PREFS.putInt("setting_prs", 3);
     PREFS.putInt("setting_mbr", 255);
     PREFS.putInt("setting_mbt", 10800);
+    PREFS.putInt("setting_tst", 600);
 
     LOGGER.println("Geen instellingen gevonden, standaardinstellingen opgeslagen.");
 }

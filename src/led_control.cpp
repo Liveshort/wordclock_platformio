@@ -656,6 +656,217 @@ void LEDController::show_dimmer_set() {
         crossfade();
 }
 
+void LEDController::show_timer_set() {
+    static int8_t direction = 255 / (ANIMATION_FPS * SELECT_CYCLE_S / 2);
+    static int8_t step = direction;
+
+    // Clear all LEDs
+    for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
+        leds_logical[i] = CRGB::Black;
+    }
+
+    // Breathing animation for the current text
+    if (ANIMATION_STATES[TIMER_SELECT_BREATHING] < step)
+        direction = abs(direction);
+    if (ANIMATION_STATES[TIMER_SELECT_BREATHING] > 255 - step)
+        direction = -abs(direction);
+    ANIMATION_STATES[TIMER_SELECT_BREATHING] += direction;
+
+    int timer_select_minutes = USER_SETTINGS[TIMER_SELECT_S] / 60;
+    int timer_select_seconds = USER_SETTINGS[TIMER_SELECT_S] % 60;
+
+    char buf[4];
+    // Display the minutes as 03 or 04 or 14, etc at row 1
+    snprintf(buf, sizeof(buf), "%02d", timer_select_minutes);
+    display_word_at_row(buf, 1, -2);
+    // Display the seconds as 01 or 20 or 44, etc at row 7
+    snprintf(buf, sizeof(buf), "%02d", timer_select_seconds);
+    display_word_at_row(buf, 7, -2);
+
+    // Dim the LEDs (except the minute dots) with the animation state
+    for (int i = 0; i < NUM_LEDS_LOGICAL - 5; ++i) {
+        leds_logical[i] = blend(CRGB::Black, leds_logical[i], ANIMATION_STATES[TIMER_SELECT_BREATHING]);
+    }
+
+    // Add a static +, - and play at the right side of the clock for the 'controls'
+    leds_logical[11] = CRGB::Green;
+    leds_logical[23] = CRGB::Green;
+    leds_logical[24] = CRGB::Green;
+    leds_logical[25] = CRGB::Green;
+    leds_logical[37] = CRGB::Green;
+
+    leds_logical[62] = CRGB::Blue;
+    leds_logical[75] = CRGB::Blue;
+    leds_logical[76] = CRGB::Blue;
+    leds_logical[88] = CRGB::Blue;
+    leds_logical[89] = CRGB::Blue;
+    leds_logical[90] = CRGB::Blue;
+    leds_logical[101] = CRGB::Blue;
+    leds_logical[102] = CRGB::Blue;
+    leds_logical[114] = CRGB::Blue;
+
+    leds_logical[153] = CRGB::Red;
+    leds_logical[154] = CRGB::Red;
+    leds_logical[155] = CRGB::Red;
+
+    // Minute dots should slowly fade from right to left as the timeout expires. We devide this time in 10000 bips.
+    int bips_elapsed =
+        10000 * ((long) (millis() - TIMERS[TIMER_BUTTON_TIMER])) / (USER_SETTINGS[TIMER_SELECT_TIMEOUT_S] * 1000);
+    if (bips_elapsed < 0)
+        bips_elapsed = 0;
+    else if (bips_elapsed > 10000)
+        bips_elapsed = 10000;
+
+    int full_dots = (10000 - bips_elapsed) / 2000;               // Each dot represents 2000 permyriads
+    int partial_dot_permyriads = (10000 - bips_elapsed) % 2000;  // Remainder for the partial dot
+
+    for (int i = 0; i < 5; i++) {
+        if (i < full_dots) {
+            leds_logical[169 + i] = CRGB::White;  // Fully on
+        } else if (i == full_dots) {
+            leds_logical[169 + i] = blend(CRGB::Black, CRGB::White,
+                                          partial_dot_permyriads * 255 / 2000);  // Partial brightness
+        } else {
+            leds_logical[169 + i] = CRGB::Black;  // Fully off
+        }
+    }
+
+    if (FLAGS[FADING_OUT])
+        fade_out();
+    else if (FLAGS[FADING_IN])
+        fade_in();
+    else if (FLAGS[CROSSFADING])
+        crossfade();
+}
+
+void LEDController::show_timer_running(bool paused) {
+    static int8_t direction = 255 / (ANIMATION_FPS * SELECT_CYCLE_S / 2);
+    static int8_t step = direction;
+
+    // Clear all LEDs
+    for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
+        leds_logical[i] = CRGB::Black;
+    }
+
+    // Breathing animation for the current text if the timer is paused
+    if (paused) {
+        if (ANIMATION_STATES[TIMER_SELECT_BREATHING] < step)
+            direction = abs(direction);
+        if (ANIMATION_STATES[TIMER_SELECT_BREATHING] > 255 - step)
+            direction = -abs(direction);
+        ANIMATION_STATES[TIMER_SELECT_BREATHING] += direction;
+    }
+
+    int time_left_s = USER_SETTINGS[TIMER_S] - ((millis() - TIMERS[TIMER_TIMER]) / 1000);
+    if (time_left_s < 0)
+        time_left_s = 0;
+
+    int timer_select_minutes = time_left_s / 60;
+    int timer_select_seconds = time_left_s % 60;
+
+    char buf[4];
+    // Display the minutes as 03 or 04 or 25, etc at row 1
+    snprintf(buf, sizeof(buf), "%02d", timer_select_minutes);
+    display_word_at_row(buf, 1, -2);
+    // Display the seconds as 01 or 20 or 44, etc at row 7
+    snprintf(buf, sizeof(buf), "%02d", timer_select_seconds);
+    display_word_at_row(buf, 7, -2);
+
+    // Dim the LEDs (except the minute dots) with the animation state if the timer is paused
+    if (paused) {
+        for (int i = 0; i < NUM_LEDS_LOGICAL - 5; ++i) {
+            leds_logical[i] = blend(CRGB::Black, leds_logical[i], ANIMATION_STATES[TIMER_SELECT_BREATHING]);
+        }
+    }
+
+    // Add a static +, pause and stop at the right side of the clock for the 'controls'
+    leds_logical[24] = CRGB::Green;
+    leds_logical[36] = CRGB::Green;
+    leds_logical[37] = CRGB::Green;
+    leds_logical[38] = CRGB::Green;
+    leds_logical[50] = CRGB::Green;
+    if (paused) {
+        leds_logical[62] = CRGB::Blue;
+        leds_logical[75] = CRGB::Blue;
+        leds_logical[76] = CRGB::Blue;
+        leds_logical[88] = CRGB::Blue;
+        leds_logical[89] = CRGB::Blue;
+        leds_logical[90] = CRGB::Blue;
+        leds_logical[101] = CRGB::Blue;
+        leds_logical[102] = CRGB::Blue;
+        leds_logical[114] = CRGB::Blue;
+    } else {
+        leds_logical[75] = CRGB::Yellow;
+        leds_logical[88] = CRGB::Yellow;
+        leds_logical[101] = CRGB::Yellow;
+        leds_logical[77] = CRGB::Yellow;
+        leds_logical[90] = CRGB::Yellow;
+        leds_logical[103] = CRGB::Yellow;
+    }
+    leds_logical[127] = CRGB::Red;
+    leds_logical[128] = CRGB::Red;
+    leds_logical[129] = CRGB::Red;
+    leds_logical[140] = CRGB::Red;
+    leds_logical[141] = CRGB::Red;
+    leds_logical[142] = CRGB::Red;
+    leds_logical[153] = CRGB::Red;
+    leds_logical[154] = CRGB::Red;
+    leds_logical[155] = CRGB::Red;
+
+    // Minute dots should slowly fade from right to left as the timeout expires. We devide this time in 10000 bips.
+    int bips_elapsed = 10000 * (long) (millis() - TIMERS[TIMER_TIMER]) / (1000 * USER_SETTINGS[TIMER_S]);
+    if (bips_elapsed < 0)
+        bips_elapsed = 0;
+    else if (bips_elapsed > 10000)
+        bips_elapsed = 10000;
+
+    int full_dots = (10000 - bips_elapsed) / 2000;               // Each dot represents 2000 permyriads
+    int partial_dot_permyriads = (10000 - bips_elapsed) % 2000;  // Remainder for the partial dot
+
+    for (int i = 0; i < 5; i++) {
+        if (i < full_dots) {
+            leds_logical[169 + i] = CRGB::White;  // Fully on
+        } else if (i == full_dots) {
+            leds_logical[169 + i] = blend(CRGB::Black, CRGB::White,
+                                          partial_dot_permyriads * 255 / 2000);  // Partial brightness
+        } else {
+            leds_logical[169 + i] = CRGB::Black;  // Fully off
+        }
+    }
+
+    if (FLAGS[FADING_OUT])
+        fade_out();
+    else if (FLAGS[FADING_IN])
+        fade_in();
+    else if (FLAGS[CROSSFADING])
+        crossfade();
+}
+
+void LEDController::show_timer_finished() {
+    // Clear all LEDs
+    for (int i = 0; i < NUM_LEDS_LOGICAL; ++i) {
+        leds_logical[i] = CRGB::Black;
+    }
+
+    // Minute dots should flash intermittently for half a second
+    if (millis() % 1000 < 500) {
+        display_word_at_row("00", 1, 0);
+        display_word_at_row("00", 7, 0);
+        for (int i = 0; i < 5; i++)
+            leds_logical[169 + i] = CRGB::White;  // Fully on
+    } else {
+        for (int i = 0; i < 5; i++)
+            leds_logical[169 + i] = CRGB::Black;  // Fully off
+    }
+
+    if (FLAGS[FADING_OUT])
+        fade_out();
+    else if (FLAGS[FADING_IN])
+        fade_in();
+    else if (FLAGS[CROSSFADING])
+        crossfade();
+}
+
 void LEDController::show_drawing_board() {
     // Display LEDs based on DRAWING_BOARD_LEDS array with colors
     for (int i = 0; i < NUM_LEDS_LOGICAL; i++) {

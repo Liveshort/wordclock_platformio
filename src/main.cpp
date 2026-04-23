@@ -205,6 +205,114 @@ void loop() {
         if (USER_SETTINGS[MANUAL_BRIGHTNESS] == 0) {
             USER_SETTINGS[MANUAL_BRIGHTNESS] = 255;
 
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+
+        // If we are setting the timer, use the alternate button meaning
+        if (CURR_STATE == TIMER_SET) {
+            // Any time the button is pressed, reset the animation and clock state to full brightness
+            ANIMATION_STATES[TIMER_SELECT_BREATHING] = 255;
+            // Also reset the 10 minute timeout
+            TIMERS[TIMER_BUTTON_TIMER] = millis();
+            // The gezegde and dimmer buttons act as + and -. Wifi button acts as start. The other buttons are ignored.
+            // + button (GEZEGDE)
+            if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
+                if (USER_SETTINGS[TIMER_SELECT_S] < 180)
+                    USER_SETTINGS[TIMER_SELECT_S] += 10;
+                else if (USER_SETTINGS[TIMER_SELECT_S] < 600)
+                    USER_SETTINGS[TIMER_SELECT_S] += 30;
+                else if (USER_SETTINGS[TIMER_SELECT_S] < 1800)
+                    USER_SETTINGS[TIMER_SELECT_S] += 60;
+                else if (USER_SETTINGS[TIMER_SELECT_S] < 5400)
+                    USER_SETTINGS[TIMER_SELECT_S] += 300;
+            }
+            // Start button (WIFI) starts the timer and goes to the TIMER_RUNNING state
+            if (BUTTONS_PRESSED[BUTTON_WIFI]) {
+                USER_SETTINGS[TIMER_S] = USER_SETTINGS[TIMER_SELECT_S];
+                TIMERS[TIMER_TIMER] = millis();
+
+                CURR_STATE = TIMER_RUNNING;
+                NEXT_STATE = TIMER_RUNNING;
+                trigger_fast_transition();
+            }
+            // - button (DIMMER)
+            if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
+                if (USER_SETTINGS[TIMER_SELECT_S] > 5400)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 300;
+                else if (USER_SETTINGS[TIMER_SELECT_S] > 600)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 60;
+                else if (USER_SETTINGS[TIMER_SELECT_S] > 180)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 30;
+                else if (USER_SETTINGS[TIMER_SELECT_S] > 10)
+                    USER_SETTINGS[TIMER_SELECT_S] -= 10;
+            }
+
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+
+        // If the timer is running, use the alternate button meaning
+        if (CURR_STATE == TIMER_RUNNING || CURR_STATE == TIMER_PAUSED) {
+            // Any time the button is pressed, reset the animation and clock state to full brightness
+            ANIMATION_STATES[TIMER_SELECT_BREATHING] = 255;
+            // The gezegde and dimmer buttons act as + and pause. The other buttons are ignored.
+            // + button (GEZEGDE)
+            if (BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
+                if (USER_SETTINGS[TIMER_S] < 180)
+                    USER_SETTINGS[TIMER_S] += 10;
+                else if (USER_SETTINGS[TIMER_S] < 600)
+                    USER_SETTINGS[TIMER_S] += 30;
+                else if (USER_SETTINGS[TIMER_S] < 1800)
+                    USER_SETTINGS[TIMER_S] += 60;
+                else if (USER_SETTINGS[TIMER_S] < 5400)
+                    USER_SETTINGS[TIMER_S] += 300;
+            }
+            // Pause button (WIFI) pauses or resumes the timer
+            if (BUTTONS_PRESSED[BUTTON_WIFI] && CURR_STATE == TIMER_RUNNING) {
+                USER_SETTINGS[TIMER_ELAPSED_MS] = millis() - TIMERS[TIMER_TIMER];
+                CURR_STATE = TIMER_PAUSED;
+                NEXT_STATE = TIMER_PAUSED;
+                trigger_fast_transition();
+            } else if (BUTTONS_PRESSED[BUTTON_WIFI] && CURR_STATE == TIMER_PAUSED) {
+                CURR_STATE = TIMER_RUNNING;
+                NEXT_STATE = TIMER_RUNNING;
+                trigger_fast_transition();
+            }
+            // Stop button (DIMMER) returns to normal operation immediately
+            if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
+                CURR_STATE = NORMAL_OPERATION;
+                NEXT_STATE = NORMAL_OPERATION;
+                CURR_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+                trigger_fast_transition();
+            }
+
+            // Reset the buttons if this occurs
+            BUTTONS_PRESSED[BUTTON_DIMMER] = false;
+            BUTTONS_PRESSED[BUTTON_TIMER] = false;
+            BUTTONS_PRESSED[BUTTON_WIFI] = false;
+            BUTTONS_PRESSED[BUTTON_THEMA] = false;
+            BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
+        }
+
+        // If the timer is finished, pressing any buttons return the clock to normal operation immediately
+        if (CURR_STATE == TIMER_FINISHED) {
+            CURR_STATE = NORMAL_OPERATION;
+            NEXT_STATE = NORMAL_OPERATION;
+            CURR_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+            NEXT_NO_SUBSTATE = SUBSTATE_SHOW_TIME;
+            trigger_fast_transition();
+
+            // Reset the buttons if this occurs
             BUTTONS_PRESSED[BUTTON_DIMMER] = false;
             BUTTONS_PRESSED[BUTTON_TIMER] = false;
             BUTTONS_PRESSED[BUTTON_WIFI] = false;
@@ -212,7 +320,7 @@ void loop() {
             BUTTONS_PRESSED[BUTTON_GEZEGDE] = false;
         }
     }
-    // Check for button presses
+    // Handle the button presses in the normal state
     if (BUTTONS_PRESSED[BUTTON_DIMMER]) {
         BUTTONS_PRESSED[BUTTON_DIMMER] = false;
 
@@ -241,7 +349,18 @@ void loop() {
     }
     if (BUTTONS_PRESSED[BUTTON_TIMER]) {
         BUTTONS_PRESSED[BUTTON_TIMER] = false;
-        LOGGER.println("TIMER button pressed!");
+
+        TIMERS[TIMER_BUTTON_TIMER] = millis();
+
+        if (CURR_STATE != TIMER_SET) {
+            USER_SETTINGS[TIMER_SELECT_S] = 60;
+
+            // Interrupts lead to an immediate state change. Transition is handled in the new state, by saving a
+            // snapshot of the current LED state and crossfading from that.
+            CURR_STATE = TIMER_SET;
+            NEXT_STATE = TIMER_SET;
+            trigger_fast_transition();
+        }
     }
     if (BUTTONS_PRESSED[BUTTON_WIFI]) {
         BUTTONS_PRESSED[BUTTON_WIFI] = false;
@@ -421,6 +540,40 @@ void loop() {
                 }
 
                 LED_CONTROLLER.show_dimmer_set();
+                break;
+            case TIMER_SET:
+                // The timer select screen has a 10 minute timeout, after which return to showing the time
+                if (millis() - TIMERS[TIMER_BUTTON_TIMER] > USER_SETTINGS[TIMER_SELECT_TIMEOUT_S] * 1000) {
+                    USER_SETTINGS[TIMER_S] = USER_SETTINGS[TIMER_SELECT_S];
+                    TIMERS[TIMER_TIMER] = millis();
+
+                    CURR_STATE = TIMER_RUNNING;
+                    NEXT_STATE = TIMER_RUNNING;
+                    trigger_fast_transition();
+                }
+
+                LED_CONTROLLER.show_timer_set();
+                break;
+            case TIMER_RUNNING:
+                // When the timer runs out, go to the timer finished screen
+                if (millis() - TIMERS[TIMER_TIMER] > 1000 * USER_SETTINGS[TIMER_S]) {
+                    CURR_STATE = TIMER_FINISHED;
+                    NEXT_STATE = TIMER_FINISHED;
+                    trigger_fast_transition();
+                }
+
+                LED_CONTROLLER.show_timer_running();
+                break;
+            case TIMER_PAUSED:
+                // If the timer is paused, we want to update the TIMERS[TIMER_TIMER] continuously so the the remaining
+                // time stays constant. We do this by setting the TIMER_TIMER to the current time minus the elapsed time
+                // whenever we are paused.
+                TIMERS[TIMER_TIMER] = millis() - USER_SETTINGS[TIMER_ELAPSED_MS];
+
+                LED_CONTROLLER.show_timer_running(true);
+                break;
+            case TIMER_FINISHED:
+                LED_CONTROLLER.show_timer_finished();
                 break;
             case DRAWING_BOARD:
                 // Check if the flag has been unset, so we can return to normal operation
