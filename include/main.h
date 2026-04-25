@@ -147,6 +147,7 @@ extern byte MINUTE_DOTS[];
 extern byte DRAWING_BOARD_LEDS[174];
 extern byte DRAWING_BOARD_COLORS[174][3];
 
+extern QueueHandle_t BUTTON_QUEUE;
 extern int LIGHT_SENSOR_VALUES[2][10];
 extern int RANDOM_SAYING_INDEX;
 
