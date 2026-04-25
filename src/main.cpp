@@ -21,6 +21,7 @@ byte TARGET_TIME_WORDS[7];
 byte MINUTE_DOTS[5];
 byte DRAWING_BOARD_LEDS[174];
 byte DRAWING_BOARD_COLORS[174][3];  // RGB colors for each LED
+QueueHandle_t BUTTON_QUEUE;
 int LIGHT_SENSOR_VALUES[2][10];
 int RANDOM_SAYING_INDEX;
 Logger LOGGER;
@@ -71,6 +72,8 @@ void initialize_globals_and_workers() {
         DRAWING_BOARD_COLORS[i][1] = 255;  // G
         DRAWING_BOARD_COLORS[i][2] = 255;  // B
     }
+
+    BUTTON_QUEUE = xQueueCreate(2, sizeof(int));
 
     for (int i = 0; i < 2; ++i)
         for (int j = 0; j < 10; ++j)
@@ -196,6 +199,13 @@ void loop() {
         } else if (!request_time_sync() && FLAGS[WIFI_ACTIVE] && !FLAGS[AP_ACTIVE]) {
             NETWORK_MANAGER.turn_off_wifi();
         }
+    }
+
+    // Receive button presses from the button task and set the corresponding flags. The button task handles debouncing
+    // and determining which button was pressed.
+    int pressed_button_index;
+    if (xQueueReceive(BUTTON_QUEUE, &pressed_button_index, 0) == pdTRUE) {
+        BUTTONS_PRESSED[pressed_button_index] = true;
     }
 
     // First detect and save if any button was pressed, then handle the button presses
@@ -485,7 +495,7 @@ void loop() {
                         LED_CONTROLLER.show_time();
                         break;
                     case SUBSTATE_SHOW_SAYING:
-                        if (!TRANSITIONING)
+                        if (!FLAGS[TRANSITIONING])
                             FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
 
                         // After showing the saying for <duration>, return to showing the time
@@ -507,7 +517,7 @@ void loop() {
                 }
                 break;
             case FORCED_SAYING:
-                if (!TRANSITIONING)
+                if (!FLAGS[TRANSITIONING])
                     FLAGS[TWO_PART_SAYING_GO_TO_PART_2] = false;
 
                 // After showing the saying for <duration>, return to showing the time in normal operation
