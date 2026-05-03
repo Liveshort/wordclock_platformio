@@ -208,10 +208,13 @@ void loop() {
         BUTTONS_PRESSED[pressed_button_index] = true;
     }
 
-    // First detect and save if any button was pressed, then handle the button presses
+    // Catch the button presses to check if we are currently in a certain state where the button press should have
+    // different behavior. For example, if we are setting the timer, the buttons are used to adjust the timer settings
+    // instead of their normal functions. This is handled in the LED controller functions, which are called in the main
+    // loop after this.
     if (BUTTONS_PRESSED[BUTTON_DIMMER] || BUTTONS_PRESSED[BUTTON_TIMER] || BUTTONS_PRESSED[BUTTON_WIFI] ||
         BUTTONS_PRESSED[BUTTON_THEMA] || BUTTONS_PRESSED[BUTTON_GEZEGDE]) {
-        // If the clock is dimmed, any buttons wakes it up. Don't handle the button press seperately after
+        // If the clock is dimmed, any button wakes it up. Don't handle the button press seperately after
         if (USER_SETTINGS[MANUAL_BRIGHTNESS] == 0) {
             USER_SETTINGS[MANUAL_BRIGHTNESS] = 255;
 

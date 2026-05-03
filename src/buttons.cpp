@@ -29,7 +29,7 @@ void button_task(void* parameters) {
     while (true) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        unsigned long start_time = millis();
+        // unsigned long start_time = millis();
 
         int counts[BUTTON_COUNT] = {0};
         for (int i = 0; i < 50; ++i) {
@@ -53,9 +53,9 @@ void button_task(void* parameters) {
             xQueueSend(BUTTON_QUEUE, &max_index, 0);
         }
 
-        LOGGER.println("Button counts: " + String(counts[0]) + ", " + String(counts[1]) + ", " + String(counts[2]) +
-                       ", " + String(counts[3]) + ", " + String(counts[4]) +
-                       "\n    Time taken: " + String(millis() - start_time) + "ms");
+        // LOGGER.println("Button counts: " + String(counts[0]) + ", " + String(counts[1]) + ", " + String(counts[2]) +
+        //                ", " + String(counts[3]) + ", " + String(counts[4]) +
+        //                "\n    Time taken: " + String(millis() - start_time) + "ms");
     }
 }
 
